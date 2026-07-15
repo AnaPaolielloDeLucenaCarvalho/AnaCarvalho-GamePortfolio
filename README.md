@@ -4,7 +4,9 @@ Hi!! Welcome to my portfolio. Since I'm studying to be a game developer, making 
 
 It runs on a custom engine I've been developing for my Programming 4 final exam at DAE (Howest), which is based on the [Minigin](https://github.com/avadae/minigin) framework.
 
-**[Play the Portfolio Here in your Browser!](https://anapaoliellodelucenacarvalho.github.io/AnaCarvalho-Portfolio/)**
+**[Play the Portfolio Here!](https://anapaoliellodelucenacarvalho.github.io/AnaCarvalho-Portfolio/)**
+
+**[Check out the web version here!](https://github.com/AnaPaolielloDeLucenaCarvalho/AnaCarvalho-WebPortfolio.git)**
 
 ---
 
