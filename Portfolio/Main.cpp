@@ -115,73 +115,21 @@ std::chrono::steady_clock::time_point g_LastFootstepTime = std::chrono::steady_c
 
 class PlayerMoveCommand : public portfolio::Command 
 {
-    std::unique_ptr<portfolio::MoveCommand> m_MoveCmd;
     portfolio::GameObject* m_Player;
-    std::vector<SDL_FRect> m_WoodZones;
-    bool m_AlwaysWood;
+    glm::vec2 m_Dir;
 
 public:
-    PlayerMoveCommand(portfolio::GameObject* player, glm::vec2 dir, float speed, const std::vector<SDL_FRect>& walkableZones, bool alwaysWood, const std::vector<SDL_FRect>& woodZones)
-        : m_MoveCmd(std::make_unique<portfolio::MoveCommand>(player, dir, speed, walkableZones))
-        , m_Player(player)
-        , m_WoodZones(woodZones)
-        , m_AlwaysWood(alwaysWood) 
+    PlayerMoveCommand(portfolio::GameObject* player, glm::vec2 dir)
+        : m_Player(player), m_Dir(dir)
     {
     }
 
     void Execute(float deltaTime) override
     {
-        auto posBefore = m_Player->GetTransform().GetPosition();
-        m_MoveCmd->Execute(deltaTime);
-        auto posAfter = m_Player->GetTransform().GetPosition();
-
-        if (std::abs(posBefore.x - posAfter.x) > 0.01f || std::abs(posBefore.y - posAfter.y) > 0.01f)
+        auto controller = m_Player->GetComponent<portfolio::PlayerControllerComponent>();
+        if (controller)
         {
-            Surface newSurface = Surface::Grass;
-            if (m_AlwaysWood)
-            {
-                newSurface = Surface::Wood;
-            }
-            else
-            {
-                float feetX = posAfter.x + 44.0f;
-                float feetY = posAfter.y + 115.0f;
-
-                for (const auto& rect : m_WoodZones)
-                {
-                    if (feetX >= rect.x && feetX <= rect.x + rect.w && feetY >= rect.y && feetY <= rect.y + rect.h)
-                    {
-                        newSurface = Surface::Wood;
-                        break;
-                    }
-                }
-            }
-
-            auto& ss = portfolio::ServiceLocator::get_sound_system();
-
-            if (g_CurrentSurface != newSurface)
-            {
-                if (newSurface == Surface::Wood)
-                {
-                    ss.play(11, 0.4f); // Jump Wood
-                }
-                else
-                {
-                    ss.play(12, 0.4f); // Jump Grass
-                }
-
-                g_CurrentSurface = newSurface;
-                g_LastFootstepTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(250);
-            }
-
-            auto now = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - g_LastFootstepTime).count() > 350)
-            {
-                g_LastFootstepTime = now;
-
-                int soundId = (newSurface == Surface::Wood) ? (1 + (std::rand() % 5)) : (6 + (std::rand() % 5));
-                ss.play(static_cast<portfolio::sound_id>(soundId), 0.15f);
-            }
+            controller->MoveInDirection(m_Dir, deltaTime);
         }
     }
 };
@@ -229,22 +177,20 @@ public:
 };
 
 // INPUT BINDINGS
-void BindPlayerInputs(portfolio::GameObject* playerPtr, const std::vector<SDL_FRect>& walkableZones = {}, bool canInteract = false, bool alwaysWood = true, const std::vector<SDL_FRect>& woodZones = {})
+void BindPlayerInputs(portfolio::GameObject* playerPtr, bool canInteract = false)
 {
     auto& input = portfolio::InputManager::GetInstance();
     input.UnbindAll();
 
-    float playerSpeed = 150.0f;
+    input.BindCommand(SDL_SCANCODE_W, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 0, -1 }));
+    input.BindCommand(SDL_SCANCODE_S, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 0, 1 }));
+    input.BindCommand(SDL_SCANCODE_A, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ -1, 0 }));
+    input.BindCommand(SDL_SCANCODE_D, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 1, 0 }));
 
-    input.BindCommand(SDL_SCANCODE_W, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 0, -1 }, playerSpeed, walkableZones, alwaysWood, woodZones));
-    input.BindCommand(SDL_SCANCODE_S, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 0, 1 }, playerSpeed, walkableZones, alwaysWood, woodZones));
-    input.BindCommand(SDL_SCANCODE_A, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ -1, 0 }, playerSpeed, walkableZones, alwaysWood, woodZones));
-    input.BindCommand(SDL_SCANCODE_D, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 1, 0 }, playerSpeed, walkableZones, alwaysWood, woodZones));
-
-    input.BindCommand(SDL_SCANCODE_UP, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 0, -1 }, playerSpeed, walkableZones, alwaysWood, woodZones));
-    input.BindCommand(SDL_SCANCODE_DOWN, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 0, 1 }, playerSpeed, walkableZones, alwaysWood, woodZones));
-    input.BindCommand(SDL_SCANCODE_LEFT, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ -1, 0 }, playerSpeed, walkableZones, alwaysWood, woodZones));
-    input.BindCommand(SDL_SCANCODE_RIGHT, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 1, 0 }, playerSpeed, walkableZones, alwaysWood, woodZones));
+    input.BindCommand(SDL_SCANCODE_UP, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 0, -1 }));
+    input.BindCommand(SDL_SCANCODE_DOWN, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 0, 1 }));
+    input.BindCommand(SDL_SCANCODE_LEFT, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ -1, 0 }));
+    input.BindCommand(SDL_SCANCODE_RIGHT, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 1, 0 }));
 
     // Cancel autowalk when using WASD
     input.BindCommand(SDL_SCANCODE_W, portfolio::KeyState::Down, std::make_unique<CancelAutoWalkCommand>(playerPtr));
@@ -539,7 +485,7 @@ std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPl
          portfolio::SceneManager::GetInstance().TransitionToScene(3, [projectsPlayerPtr]()
          {
              std::vector<SDL_FRect> projectsWoodZones = { SDL_FRect{ 636.0f, 0.0f, 100.0f, 272.0f } };
-             BindPlayerInputs(projectsPlayerPtr, {}, true, false, projectsWoodZones);
+             BindPlayerInputs(projectsPlayerPtr, true);
         });
     };
 
@@ -746,7 +692,7 @@ void load()
                 pc->ConfigureZones(aboutScenePlanks, true, {});
                 pc->CancelAutoWalk();
             }
-            BindPlayerInputs(p2, aboutScenePlanks, false, true); // true = always Wood
+            BindPlayerInputs(p2, false);
         });
     });
 
@@ -761,7 +707,7 @@ void load()
                 pc->ConfigureZones(contactScenePlanks, true, {});
                 pc->CancelAutoWalk();
             }
-            BindPlayerInputs(p3, contactScenePlanks, false, true); // true = always Wood
+            BindPlayerInputs(p3, false);
         });
     });
 
@@ -776,7 +722,7 @@ void load()
                 pc->ConfigureZones({}, false, projectsWoodZones);
                 pc->CancelAutoWalk();
             }
-			BindPlayerInputs(p4, {}, true, false, projectsWoodZones); // false = not always wood
+			BindPlayerInputs(p4, true);
         });
     });
 
@@ -791,7 +737,7 @@ void load()
                 pc->ConfigureZones(mainScenePlanks, true, {});
                 pc->CancelAutoWalk();
             }
-            BindPlayerInputs(p1, mainScenePlanks, false, true);
+            BindPlayerInputs(p1, false);
         });
     });
 
@@ -806,7 +752,7 @@ void load()
                 pc->ConfigureZones(mainScenePlanks, true, {});
                 pc->CancelAutoWalk();
             }
-            BindPlayerInputs(p1, mainScenePlanks, false, true);
+            BindPlayerInputs(p1, false);
         });
     });
 
@@ -821,7 +767,7 @@ void load()
                 pc->ConfigureZones(mainScenePlanks, true, {});
                 pc->CancelAutoWalk();
             }
-            BindPlayerInputs(p1, mainScenePlanks, false, true);
+            BindPlayerInputs(p1, false);
         });
     });
 
@@ -830,7 +776,7 @@ void load()
     {
         pc->ConfigureZones(mainScenePlanks, true, {});
     }
-    BindPlayerInputs(p1, mainScenePlanks, false, true); // true = Always Wood
+    BindPlayerInputs(p1, false);
     portfolio::SceneManager::GetInstance().SetActiveScene(0);
 }
 
