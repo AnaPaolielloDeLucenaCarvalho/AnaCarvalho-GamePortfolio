@@ -71,3 +71,7 @@ vcpkg_packages/
 
 # MAC
 .DS_Store
+
+# Ninja files
+build.ninja
+rules.ninja
