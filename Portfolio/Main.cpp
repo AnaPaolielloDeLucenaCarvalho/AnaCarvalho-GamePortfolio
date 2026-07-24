@@ -316,11 +316,11 @@ void BindProjectViewInputs(std::function<void()> onEsc, std::function<void()> on
             return;
         }
 
-        if (mousePos.x < 300.0f && mousePos.y > 600.0f)
+        if (mousePos.x >= 88.0f && mousePos.x <= 144.0f && mousePos.y >= 584.0f && mousePos.y <= 620.0f)
         {
             onQ();
         }
-        else if (mousePos.x > 1066.0f && mousePos.y > 600.0f)
+        else if (mousePos.x >= 864.0f && mousePos.x <= 920.0f && mousePos.y >= 584.0f && mousePos.y <= 620.0f)
         {
             onE();
         }
