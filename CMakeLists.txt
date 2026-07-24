@@ -6,7 +6,7 @@ if(EMSCRIPTEN)
 endif()
 
 if(EMSCRIPTEN)
-  set(TARGET_NAME Portfolio_web)
+  set(TARGET_NAME AnaCarvalho-GamePortfolio)
   set(TARGET_PARAM )
 else()
   set(TARGET_NAME Portfolio)
@@ -15,8 +15,6 @@ endif()
 # ENGINE LIBRARY (Minigin)
 
 add_library(Minigin STATIC
-  Minigin/Font.cpp
-  Minigin/FPSComponent.cpp 
   Minigin/GameObject.cpp
   Minigin/Gamepad.cpp
   Minigin/InputManager.cpp
@@ -24,10 +22,8 @@ add_library(Minigin STATIC
   Minigin/RenderComponent.cpp
   Minigin/Renderer.cpp
   Minigin/ResourceManager.cpp
-  Minigin/RotatorComponent.cpp
   Minigin/Scene.cpp
   Minigin/SceneManager.cpp
-  Minigin/TextComponent.cpp
   Minigin/Texture2D.cpp
   Minigin/Transform.cpp
   Minigin/MiniaudioSoundSystem.cpp 
