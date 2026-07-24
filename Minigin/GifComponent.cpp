@@ -17,7 +17,7 @@ namespace portfolio
     GifComponent::GifComponent(GameObject* pOwner, const std::string& filename)
         : Component(pOwner)
     {
-        std::string fullPath = (std::filesystem::path("Data") / filename).string();
+        std::string fullPath = ResourceManager::GetInstance().GetDataPath().string() + filename;
 
         FILE* f = nullptr;
 #ifdef _WIN32

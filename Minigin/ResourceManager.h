@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <filesystem>
 #include <string>
 #include <memory>
@@ -13,6 +13,7 @@ namespace portfolio
 	public:
 		void Init(const std::filesystem::path& data);
 		std::shared_ptr<Texture2D> LoadTexture(const std::string& file);
+		const std::filesystem::path& GetDataPath() const { return m_dataPath; }
 	private:
 		friend class Singleton<ResourceManager>;
 		ResourceManager() = default;

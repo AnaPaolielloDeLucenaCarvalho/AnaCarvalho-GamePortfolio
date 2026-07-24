@@ -41,7 +41,6 @@ namespace portfolio
         }
 
         const auto flip = m_isFlipped ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
-        //dae::Renderer::GetInstance().RenderTexture(*m_texture, pos.x, pos.y, scaledW, scaledH, flip);
 
         SDL_FRect dst{ pos.x, pos.y, scaledW, scaledH };
         SDL_RenderTextureRotated(

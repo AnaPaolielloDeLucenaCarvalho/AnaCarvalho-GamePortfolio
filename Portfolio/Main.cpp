@@ -346,6 +346,7 @@ void LoadMainMenu(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent
 
     auto player = std::make_unique<portfolio::GameObject>();
     player->AddComponent<portfolio::SpriteComponent>("PlayerSprite.png", 3, 3, 0.1f);
+    player->AddComponent<portfolio::PlayerControllerComponent>();
     player->SetLocalPosition(642.5f, 400.0f);
     outPlayer = player.get();
     scene.Add(std::move(player));
@@ -452,9 +453,11 @@ std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPl
         std::string pngPath = relativePath + ".png";
         std::string txtPath = relativePath + ".txt";
 
-        if (std::filesystem::exists(std::filesystem::path("Data") / txtPath)) 
+        std::filesystem::path dataPath = portfolio::ResourceManager::GetInstance().GetDataPath();
+
+        if (std::filesystem::exists(dataPath / txtPath)) 
         {
-            std::ifstream file(std::filesystem::path("Data") / txtPath);
+            std::ifstream file(dataPath / txtPath);
             std::string link;
             if (std::getline(file, link)) 
             {
@@ -462,7 +465,7 @@ std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPl
             }
         }
 
-        if (std::filesystem::exists(std::filesystem::path("Data") / gifPath)) 
+        if (std::filesystem::exists(dataPath / gifPath)) 
         {
             imageFiles.push_back(gifPath);
         } 
@@ -741,6 +744,7 @@ void load()
             if (auto pc = p2->GetComponent<portfolio::PlayerControllerComponent>()) 
             {
                 pc->ConfigureZones(aboutScenePlanks, true, {});
+                pc->CancelAutoWalk();
             }
             BindPlayerInputs(p2, aboutScenePlanks, false, true); // true = always Wood
         });
@@ -755,6 +759,7 @@ void load()
             if (auto pc = p3->GetComponent<portfolio::PlayerControllerComponent>()) 
             {
                 pc->ConfigureZones(contactScenePlanks, true, {});
+                pc->CancelAutoWalk();
             }
             BindPlayerInputs(p3, contactScenePlanks, false, true); // true = always Wood
         });
@@ -769,6 +774,7 @@ void load()
             if (auto pc = p4->GetComponent<portfolio::PlayerControllerComponent>()) 
             {
                 pc->ConfigureZones({}, false, projectsWoodZones);
+                pc->CancelAutoWalk();
             }
 			BindPlayerInputs(p4, {}, true, false, projectsWoodZones); // false = not always wood
         });
@@ -783,6 +789,7 @@ void load()
             if (auto pc = p1->GetComponent<portfolio::PlayerControllerComponent>()) 
             {
                 pc->ConfigureZones(mainScenePlanks, true, {});
+                pc->CancelAutoWalk();
             }
             BindPlayerInputs(p1, mainScenePlanks, false, true);
         });
@@ -797,6 +804,7 @@ void load()
             if (auto pc = p1->GetComponent<portfolio::PlayerControllerComponent>()) 
             {
                 pc->ConfigureZones(mainScenePlanks, true, {});
+                pc->CancelAutoWalk();
             }
             BindPlayerInputs(p1, mainScenePlanks, false, true);
         });
@@ -811,6 +819,7 @@ void load()
             if (auto pc = p1->GetComponent<portfolio::PlayerControllerComponent>()) 
             {
                 pc->ConfigureZones(mainScenePlanks, true, {});
+                pc->CancelAutoWalk();
             }
             BindPlayerInputs(p1, mainScenePlanks, false, true);
         });

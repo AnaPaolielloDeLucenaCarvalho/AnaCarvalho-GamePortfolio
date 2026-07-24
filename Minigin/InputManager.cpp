@@ -58,7 +58,23 @@ namespace portfolio
                 return false;
             }
 
-            if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+            if (e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat)
+            {
+                auto it = m_KeyboardCommands.find({ e.key.scancode, KeyState::Down });
+                if (it != m_KeyboardCommands.end())
+                {
+                    it->second->Execute(deltaTime);
+                }
+            }
+            else if (e.type == SDL_EVENT_KEY_UP)
+            {
+                auto it = m_KeyboardCommands.find({ e.key.scancode, KeyState::Up });
+                if (it != m_KeyboardCommands.end())
+                {
+                    it->second->Execute(deltaTime);
+                }
+            }
+            else if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
             {
                 auto it = m_MouseCommands.find({ e.button.button, KeyState::Down });
                 if (it != m_MouseCommands.end())

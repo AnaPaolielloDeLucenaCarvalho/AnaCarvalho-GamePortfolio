@@ -83,9 +83,9 @@ namespace portfolio
             m_PreviousButtons = m_CurrentButtons;
             m_CurrentButtons = 0;
 
-            auto Map = [&](ControllerButton daeB, SDL_GamepadButton sdlB) {
+            auto Map = [&](ControllerButton btn, SDL_GamepadButton sdlB) {
                 if (SDL_GetGamepadButton(m_pGamepad, sdlB))
-                    m_CurrentButtons |= static_cast<unsigned int>(daeB);
+                    m_CurrentButtons |= static_cast<unsigned int>(btn);
                 };
 
             Map(ControllerButton::DPadUp, SDL_GAMEPAD_BUTTON_DPAD_UP);
