@@ -502,6 +502,11 @@ std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPl
          portfolio::SceneManager::GetInstance().TransitionToScene(3, [projectsPlayerPtr]()
          {
              std::vector<SDL_FRect> projectsWoodZones = { SDL_FRect{ 636.0f, 0.0f, 100.0f, 272.0f } };
+             if (auto pc = projectsPlayerPtr->GetComponent<portfolio::PlayerControllerComponent>()) 
+             {
+                 pc->CancelAutoWalk();
+                 pc->SetSpeed(150.0f);
+             }
              BindPlayerInputs(projectsPlayerPtr, true);
         });
     };
@@ -708,6 +713,7 @@ void load()
             {
                 pc->ConfigureZones(aboutScenePlanks, true, {});
                 pc->CancelAutoWalk();
+                pc->SetSpeed(150.0f);
             }
             BindPlayerInputs(p2, false);
         });
@@ -723,6 +729,7 @@ void load()
             {
                 pc->ConfigureZones(contactScenePlanks, true, {});
                 pc->CancelAutoWalk();
+                pc->SetSpeed(150.0f);
             }
             BindPlayerInputs(p3, false);
         });
@@ -738,6 +745,7 @@ void load()
             {
                 pc->ConfigureZones({}, false, projectsWoodZones);
                 pc->CancelAutoWalk();
+                pc->SetSpeed(150.0f);
             }
 			BindPlayerInputs(p4, true);
         });
@@ -753,6 +761,7 @@ void load()
             {
                 pc->ConfigureZones(mainScenePlanks, true, {});
                 pc->CancelAutoWalk();
+                pc->SetSpeed(150.0f);
             }
             BindPlayerInputs(p1, false);
         });
@@ -768,6 +777,7 @@ void load()
             {
                 pc->ConfigureZones(mainScenePlanks, true, {});
                 pc->CancelAutoWalk();
+                pc->SetSpeed(150.0f);
             }
             BindPlayerInputs(p1, false);
         });
@@ -783,6 +793,7 @@ void load()
             {
                 pc->ConfigureZones(mainScenePlanks, true, {});
                 pc->CancelAutoWalk();
+                pc->SetSpeed(150.0f);
             }
             BindPlayerInputs(p1, false);
         });
