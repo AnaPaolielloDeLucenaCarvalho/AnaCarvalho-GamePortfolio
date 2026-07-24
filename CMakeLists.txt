@@ -29,7 +29,8 @@ add_library(Minigin STATIC
   Minigin/MiniaudioSoundSystem.cpp 
   Minigin/ServiceLocator.cpp 
   Minigin/SpriteComponent.cpp 
-  Minigin/TriggerComponent.cpp)
+  Minigin/TriggerComponent.cpp
+  Minigin/GifComponent.cpp)
 
 target_compile_features(Minigin PUBLIC cxx_std_20)
 
@@ -85,65 +86,7 @@ if(NOT SDL3_FOUND)
   endif()
 endif()
 
-# SDL3_ttf
-find_package(SDL3_ttf 3.2.2 CONFIG QUIET)
-if(NOT SDL3_ttf_FOUND)
-  if (WIN32)
-    FetchContent_Declare(
-      SDL3_ttf
-      URL https://www.libsdl.org/projects/SDL_ttf/release/SDL3_ttf-devel-3.2.2-VC.zip
-      DOWNLOAD_NO_PROGRESS ON
-      DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/downloads
-    )
-    FetchContent_MakeAvailable(SDL3_ttf)
-    list(PREPEND CMAKE_PREFIX_PATH "${sdl3_ttf_SOURCE_DIR}")
-    find_package(SDL3_ttf CONFIG REQUIRED)
-  else()
-    FetchContent_Declare(
-      SDL3_ttf
-      GIT_REPOSITORY https://github.com/libsdl-org/SDL_ttf.git
-      GIT_TAG release-3.2.2
-      GIT_SHALLOW TRUE
-      GIT_PROGRESS TRUE
-    )
-    set(SDL3TTF_INSTALL OFF)
-    
-    if(EMSCRIPTEN)
-      list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/emscripten")
-      set(SDL3TTF_USE_SYSTEM_FREETYPE ON)
-      set(SDL3TTF_VENDORED OFF)
-      set(SDLTTF_PLUTOSVG OFF)
-      add_compile_options(-sUSE_FREETYPE=1 -sUSE_HARFBUZZ=1)
-      add_link_options(-sUSE_FREETYPE=1 -sUSE_HARFBUZZ=1)
-    endif()
-    
-    FetchContent_MakeAvailable(SDL3_ttf)
-  endif()
-endif()
-
-add_compile_definitions(IMGUI_DEFINE_MATH_OPERATORS)
-
-# Dear ImGui
-FetchContent_Declare(
-  imgui
-  GIT_REPOSITORY https://github.com/ocornut/imgui
-  GIT_TAG v1.92.5-docking
-  GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(imgui)
-
-add_library(imgui STATIC
-  ${imgui_SOURCE_DIR}/imgui.cpp
-  ${imgui_SOURCE_DIR}/imgui_draw.cpp
-  ${imgui_SOURCE_DIR}/imgui_tables.cpp
-  ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-  ${imgui_SOURCE_DIR}/imgui_demo.cpp
-  ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
-  ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp "Minigin/Gamepad.cpp")
-
-target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${sdl3_SOURCE_DIR}/include)
-target_link_libraries(imgui PUBLIC SDL3::SDL3)
-target_compile_features(imgui PUBLIC cxx_std_20)
+# ImGui and SDL3_ttf removed for efficiency
 
 if (WIN32)
   find_package(VLD CONFIG)
@@ -152,15 +95,11 @@ endif()
 # ---------------------------------------------------
 
 # LINKING DEPENDENCIES
-target_include_directories(Minigin PUBLIC
-  ${imgui_SOURCE_DIR}
-)
+# ImGui removed
 
 target_link_libraries(Minigin PUBLIC
   SDL3::SDL3
-  SDL3_ttf::SDL3_ttf
   glm::glm
-  imgui
 )
 
 target_include_directories(${TARGET_NAME} PUBLIC
@@ -181,8 +120,8 @@ else()
 endif()
 
 if(EMSCRIPTEN)
-  set(EMSCRIPTEN_COMPILE_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -g")
-  set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sUSE_FREETYPE=1 -sUSE_HARFBUZZ=1 -g -sALLOW_MEMORY_GROWTH --preload-file \"${CMAKE_SOURCE_DIR}/Data@/\" --shell-file \"${CMAKE_SOURCE_DIR}/web/shell.html\"")
+  set(EMSCRIPTEN_COMPILE_FLAGS "${EMSCRIPTEN_LINK_FLAGS}")
+  set(EMSCRIPTEN_LINK_FLAGS "${EMSCRIPTEN_LINK_FLAGS} -sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sALLOW_MEMORY_GROWTH --preload-file \"${CMAKE_SOURCE_DIR}/Data@/\" --shell-file \"${CMAKE_SOURCE_DIR}/web/shell.html\"")
 
   set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/EmscriptenToolchain.cmake)
 
@@ -203,7 +142,6 @@ elseif(WIN32)
 
   set(SDL_RUNTIME_DLLS
     SDL3::SDL3
-    SDL3_ttf::SDL3_ttf
   )
 
   foreach(dllTarget IN LISTS SDL_RUNTIME_DLLS)
@@ -228,8 +166,6 @@ elseif(APPLE)
   add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/Contents/Frameworks"
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:SDL3::SDL3-shared>" "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/Contents/Frameworks/"
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:SDL3_ttf::SDL3_ttf-shared>" "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/Contents/Frameworks/"
-    COMMAND install_name_tool -change "@rpath/libSDL3_ttf.0.dylib" "@executable_path/../Frameworks/libSDL3_ttf.0.2.2.dylib" "$<TARGET_FILE:${TARGET_NAME}>"
     COMMAND install_name_tool -change "@rpath/libSDL3.0.dylib" "@executable_path/../Frameworks/libSDL3.0.dylib" "$<TARGET_FILE:${TARGET_NAME}>"
   )
 
