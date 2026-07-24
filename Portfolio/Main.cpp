@@ -407,6 +407,23 @@ std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPl
             std::string link;
             if (std::getline(file, link)) 
             {
+                link.erase(std::remove(link.begin(), link.end(), '\r'), link.end());
+                link.erase(std::remove(link.begin(), link.end(), '\n'), link.end());
+                link.erase(std::remove(link.begin(), link.end(), ' '), link.end());
+                
+                size_t pos = link.find("youtu.be/");
+                if (pos != std::string::npos) 
+                {
+                    link.replace(pos, 9, "www.youtube.com/embed/");
+                }
+                else 
+                {
+                    pos = link.find("youtube.com/watch?v=");
+                    if (pos != std::string::npos) 
+                    {
+                        link.replace(pos, 20, "www.youtube.com/embed/");
+                    }
+                }
                 ytLinks[i - 1] = link;
             }
         }
