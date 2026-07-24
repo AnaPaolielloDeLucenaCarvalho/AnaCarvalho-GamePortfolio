@@ -1,5 +1,4 @@
 #include <SDL3/SDL.h>
-#include <backends/imgui_impl_sdl3.h>
 #include <algorithm>
 #include "InputManager.h"
 
@@ -28,6 +27,18 @@ namespace portfolio
         m_GamepadCommands.clear();
     }
 
+    void InputManager::BindMouseCommand(int button, KeyState state, std::unique_ptr<Command> command)
+    {
+        m_MouseCommands[MouseBinding{ button, state }] = std::move(command);
+    }
+
+    glm::vec2 InputManager::GetMousePosition() const
+    {
+        float x, y;
+        SDL_GetMouseState(&x, &y);
+        return glm::vec2(x, y);
+    }
+
     bool InputManager::ProcessInput(float deltaTime)
     {
 		// now it supports multiple gamepads
@@ -36,6 +47,9 @@ namespace portfolio
             gamepad->Update();
         }
 
+        // Process mouse states for Pressed (held)
+        Uint32 mouseStateBits = SDL_GetMouseState(nullptr, nullptr);
+
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
@@ -43,8 +57,34 @@ namespace portfolio
             {
                 return false;
             }
-            // IMGUI
-            ImGui_ImplSDL3_ProcessEvent(&e);
+
+            if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+            {
+                auto it = m_MouseCommands.find({ e.button.button, KeyState::Down });
+                if (it != m_MouseCommands.end())
+                {
+                    it->second->Execute(deltaTime);
+                }
+            }
+            else if (e.type == SDL_EVENT_MOUSE_BUTTON_UP)
+            {
+                auto it = m_MouseCommands.find({ e.button.button, KeyState::Up });
+                if (it != m_MouseCommands.end())
+                {
+                    it->second->Execute(deltaTime);
+                }
+            }
+        }
+
+        for (auto& [binding, command] : m_MouseCommands)
+        {
+            if (binding.state == KeyState::Pressed)
+            {
+                if (mouseStateBits & SDL_BUTTON_MASK(binding.button))
+                {
+                    command->Execute(deltaTime);
+                }
+            }
         }
 
         // Keyboard Commands

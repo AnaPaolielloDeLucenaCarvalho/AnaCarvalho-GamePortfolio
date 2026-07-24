@@ -19,6 +19,7 @@ namespace portfolio
 
         void SetFlip(bool flip) { m_isFlipped = flip; }
         void SetScale(float scale) { m_Scale = scale; }
+        void SetSize(float w, float h) { m_OverrideSize = true; m_CustomWidth = w; m_CustomHeight = h; }
 
         void SetDirection(const glm::vec2& dir);
         void MarkAsMoved() { m_WasMovedThisFrame = true; }
@@ -37,6 +38,9 @@ namespace portfolio
         float m_FrameHeight;
         bool m_isFlipped{ false };
         float m_Scale{ 1.0f };
+        bool m_OverrideSize{ false };
+        float m_CustomWidth{ 0.0f };
+        float m_CustomHeight{ 0.0f };
 
         bool m_WasMovedThisFrame{ false };
     };

@@ -8,6 +8,8 @@
 #include <vector>
 #include <memory>
 #include <SDL3/SDL.h>
+#include <glm/glm.hpp>
+#include <glm/fwd.hpp>
 
 namespace portfolio
 {
@@ -47,6 +49,22 @@ namespace portfolio
             }
         };
         std::map<GamepadBinding, std::unique_ptr<Command>> m_GamepadCommands;
+
+        struct MouseBinding
+        {
+            int button; // e.g. 1 for Left, 2 for Middle, 3 for Right
+            KeyState state;
+
+            bool operator<(const MouseBinding& other) const
+            {
+                return std::tie(button, state) < std::tie(other.button, other.state);
+            }
+        };
+        std::map<MouseBinding, std::unique_ptr<Command>> m_MouseCommands;
+
+    public:
+        void BindMouseCommand(int button, KeyState state, std::unique_ptr<Command> command);
+        glm::vec2 GetMousePosition() const;
     };
 }
 

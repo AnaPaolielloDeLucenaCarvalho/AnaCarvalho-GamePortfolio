@@ -51,8 +51,8 @@ namespace portfolio
         srcRect.x = m_CurrentCol * m_FrameWidth;
         srcRect.y = m_CurrentRow * m_FrameHeight;
 
-        float scaledW = m_FrameWidth * m_Scale;
-        float scaledH = m_FrameHeight * m_Scale;
+        float scaledW = m_OverrideSize ? m_CustomWidth : (m_FrameWidth * m_Scale);
+        float scaledH = m_OverrideSize ? m_CustomHeight : (m_FrameHeight * m_Scale);
         SDL_FRect dstRect{ pos.x, pos.y, scaledW, scaledH };
 
         const auto flip = m_isFlipped ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
