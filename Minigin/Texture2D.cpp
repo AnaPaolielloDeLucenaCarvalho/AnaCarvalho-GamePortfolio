@@ -5,11 +5,12 @@
 
 portfolio::Texture2D::~Texture2D()
 {
-	SDL_DestroyTexture(m_texture);
+	if (m_texture) SDL_DestroyTexture(m_texture);
 }
 
 glm::vec2 portfolio::Texture2D::GetSize() const
 {
+    if (!m_texture) return {0, 0};
     float w{}, h{};
     SDL_GetTextureSize(m_texture, &w, &h);
     return { w, h };
@@ -25,9 +26,8 @@ portfolio::Texture2D::Texture2D(const std::string &fullPath)
     SDL_Surface* surface = SDL_LoadPNG(fullPath.c_str());
     if (!surface)
     {
-        throw std::runtime_error(
-            std::string("Failed to load PNG: ") + SDL_GetError()
-        );
+        m_texture = nullptr;
+        return;
     }
 
     // Magenta (R:255, G:0, B:255) should be transparent!
@@ -44,9 +44,7 @@ portfolio::Texture2D::Texture2D(const std::string &fullPath)
 
     if (!m_texture)
     {
-        throw std::runtime_error(
-            std::string("Failed to create texture from surface: ") + SDL_GetError()
-        );
+        return;
     }
 }
 
