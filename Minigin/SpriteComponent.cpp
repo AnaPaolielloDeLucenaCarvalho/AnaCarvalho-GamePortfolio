@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include "GameObject.h"
 #include "Texture2D.h"
+#include <cmath>
 
 namespace portfolio
 {
@@ -70,12 +71,18 @@ namespace portfolio
 
     void portfolio::SpriteComponent::SetDirection(const glm::vec2& dir)
     {
-        if (dir.y < 0) m_CurrentRow = 0; // Up
-        else if (dir.y > 0) m_CurrentRow = 1; // Down
-        else if (dir.x != 0) m_CurrentRow = 2; // Left/Right
+        if (std::abs(dir.x) > std::abs(dir.y))
+        {
+            m_CurrentRow = 2; // Left/Right
+        }
+        else if (std::abs(dir.y) > 0.001f)
+        {
+            if (dir.y < 0) m_CurrentRow = 0; // Up
+            else m_CurrentRow = 1; // Down
+        }
 
         // Handle flipping
-        if (dir.x < 0) SetFlip(true);
-        else if (dir.x > 0) SetFlip(false);
+        if (dir.x < -0.001f) SetFlip(true);
+        else if (dir.x > 0.001f) SetFlip(false);
     }
 }
