@@ -262,11 +262,11 @@ void BindProjectViewInputs(std::function<void()> onEsc, std::function<void()> on
             return;
         }
 
-        if (mousePos.x >= 88.0f && mousePos.x <= 144.0f && mousePos.y >= 584.0f && mousePos.y <= 620.0f)
+        if (mousePos.x >= 48.0f && mousePos.x <= 184.0f && mousePos.y >= 544.0f && mousePos.y <= 660.0f)
         {
             onQ();
         }
-        else if (mousePos.x >= 864.0f && mousePos.x <= 920.0f && mousePos.y >= 584.0f && mousePos.y <= 620.0f)
+        else if (mousePos.x >= 824.0f && mousePos.x <= 960.0f && mousePos.y >= 544.0f && mousePos.y <= 660.0f)
         {
             onE();
         }
@@ -415,6 +415,7 @@ std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPl
                 if (pos != std::string::npos) 
                 {
                     link.replace(pos, 9, "www.youtube.com/embed/");
+                    link += "?autoplay=1&mute=0";
                 }
                 else 
                 {
@@ -422,6 +423,7 @@ std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPl
                     if (pos != std::string::npos) 
                     {
                         link.replace(pos, 20, "www.youtube.com/embed/");
+                        link += "?autoplay=1&mute=0";
                     }
                 }
                 ytLinks[i - 1] = link;
