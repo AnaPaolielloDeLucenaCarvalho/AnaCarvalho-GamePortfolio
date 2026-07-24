@@ -17,6 +17,7 @@ namespace portfolio
         void Render() const override;
 
         void SetScale(float scale) { m_Scale = scale; }
+        void SetFillSize(float w, float h) { m_ForcedWidth = w; m_ForcedHeight = h; m_UseFillSize = true; }
 
         GifComponent(const GifComponent&) = delete;
         GifComponent(GifComponent&&) = delete;
@@ -35,5 +36,8 @@ namespace portfolio
         float m_Scale{ 1.0f };
         int m_Width{ 0 };
         int m_Height{ 0 };
+        bool m_UseFillSize{ false };
+        float m_ForcedWidth{ 0.0f };
+        float m_ForcedHeight{ 0.0f };
     };
 }

@@ -73,3 +73,8 @@ portfolio::Scene& portfolio::SceneManager::CreateScene()
 	m_scenes.push_back(std::unique_ptr<Scene>(new Scene()));
 	return *m_scenes.back();
 }
+
+portfolio::Scene& portfolio::SceneManager::GetScene(size_t index)
+{
+    return *m_scenes[index];
+}

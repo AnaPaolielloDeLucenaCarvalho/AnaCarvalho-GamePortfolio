@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include "GameObject.h"
 #include "Texture2D.h"
+#include <algorithm>
 
 namespace portfolio
 {
@@ -29,6 +30,15 @@ namespace portfolio
         // Use the member variable scale
         float scaledW = size.x * m_Scale;
         float scaledH = size.y * m_Scale;
+
+        if (m_UseFillSize && size.x > 0 && size.y > 0)
+        {
+            float scaleX = m_ForcedWidth / size.x;
+            float scaleY = m_ForcedHeight / size.y;
+            float maxScale = std::max(scaleX, scaleY);
+            scaledW = size.x * maxScale;
+            scaledH = size.y * maxScale;
+        }
 
         const auto flip = m_isFlipped ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
         //dae::Renderer::GetInstance().RenderTexture(*m_texture, pos.x, pos.y, scaledW, scaledH, flip);

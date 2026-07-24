@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <filesystem>
+#include <algorithm>
 
 namespace portfolio
 {
@@ -114,6 +115,16 @@ namespace portfolio
 
         float scaledW = m_Width * m_Scale;
         float scaledH = m_Height * m_Scale;
+
+        if (m_UseFillSize && m_Width > 0 && m_Height > 0)
+        {
+            float scaleX = m_ForcedWidth / m_Width;
+            float scaleY = m_ForcedHeight / m_Height;
+            float maxScale = std::max(scaleX, scaleY);
+            scaledW = m_Width * maxScale;
+            scaledH = m_Height * maxScale;
+        }
+
         SDL_FRect dstRect{ pos.x, pos.y, scaledW, scaledH };
 
         SDL_RenderTexture(

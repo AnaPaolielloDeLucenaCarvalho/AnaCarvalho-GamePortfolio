@@ -25,12 +25,16 @@ namespace portfolio
         void SetFlip(bool flip) { m_isFlipped = flip; }
         void SetScale(float scale) { m_Scale = scale; }
         void SetRotation(double angle) { m_Angle = angle; }
+        void SetFillSize(float w, float h) { m_ForcedWidth = w; m_ForcedHeight = h; m_UseFillSize = true; }
 
     private:
         std::shared_ptr<Texture2D> m_texture;
         bool m_isFlipped{ false };
         float m_Scale{ 1.0f };
         double m_Angle{ 0.0 };
+        bool m_UseFillSize{ false };
+        float m_ForcedWidth{ 0.0f };
+        float m_ForcedHeight{ 0.0f };
     };
 }
 #endif // RENDERCOMPONENT_H

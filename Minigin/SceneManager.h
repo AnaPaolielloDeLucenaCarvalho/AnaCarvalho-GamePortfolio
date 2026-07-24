@@ -13,6 +13,7 @@ namespace portfolio
     {
     public:
         Scene& CreateScene();
+        Scene& GetScene(size_t index);
 
         void SetActiveScene(size_t index) { m_ActiveSceneIndex = index; }
         size_t GetActiveScene() const { return m_ActiveSceneIndex; }

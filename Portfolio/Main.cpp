@@ -3,9 +3,9 @@
 #include "Minigin.h"
 #include <iostream>
 #include <vector>
-#include <functional>
 #include <cmath>
 #include <cstdlib>
+#include <fstream>
 
 #include "Scene.h"
 #include "SceneManager.h"
@@ -13,6 +13,7 @@
 #include "RenderComponent.h"
 #include "ResourceManager.h"
 #include "SpriteComponent.h"
+#include "GifComponent.h"
 #include <utility>
 #include <filesystem>
 #include <SDL3/SDL_scancode.h>
@@ -22,8 +23,13 @@
 #include "MiniaudioSoundSystem.h"
 #include "LoggingSoundSystem.h"
 #include "ServiceLocator.h"
+#include "PlayerControllerComponent.h"
 #include <chrono>
 #include <algorithm>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 namespace fs = std::filesystem;
 
@@ -46,7 +52,8 @@ void ToggleMuteGlobal()
     static auto lastToggleTime = std::chrono::steady_clock::now();
     auto currentTime = std::chrono::steady_clock::now();
 
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastToggleTime).count() < 250) {
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastToggleTime).count() < 250) 
+    {
         return;
     }
     lastToggleTime = currentTime;
@@ -142,8 +149,7 @@ public:
 
                 for (const auto& rect : m_WoodZones)
                 {
-                    if (feetX >= rect.x && feetX <= rect.x + rect.w &&
-                        feetY >= rect.y && feetY <= rect.y + rect.h)
+                    if (feetX >= rect.x && feetX <= rect.x + rect.w && feetY >= rect.y && feetY <= rect.y + rect.h)
                     {
                         newSurface = Surface::Wood;
                         break;
@@ -180,6 +186,48 @@ public:
     }
 };
 
+void HandleGlobalWebAudioAutoplay()
+{
+#ifdef __EMSCRIPTEN__
+    // Resume audio context on first interaction
+    EM_ASM(
+        if (typeof Module !== 'undefined' && Module.audioContext && Module.audioContext.state === 'suspended') 
+        {
+            Module.audioContext.resume();
+        }
+    );
+#endif
+}
+
+class SprintCommand : public portfolio::Command
+{
+    portfolio::GameObject* m_Player;
+    bool m_IsSprint;
+public:
+    SprintCommand(portfolio::GameObject* player, bool isSprint) : m_Player(player), m_IsSprint(isSprint) {}
+    void Execute(float) override
+    {
+        auto controller = m_Player->GetComponent<portfolio::PlayerControllerComponent>();
+        if (controller)
+        {
+            controller->SetSpeed(m_IsSprint ? 300.0f : 150.0f);
+        }
+    }
+};
+
+class CancelAutoWalkCommand : public portfolio::Command
+{
+    portfolio::GameObject* m_Player;
+public:
+    CancelAutoWalkCommand(portfolio::GameObject* player) : m_Player(player) {}
+    void Execute(float) override
+    {
+        HandleGlobalWebAudioAutoplay();
+        auto controller = m_Player->GetComponent<portfolio::PlayerControllerComponent>();
+        if (controller) controller->CancelAutoWalk();
+    }
+};
+
 // INPUT BINDINGS
 void BindPlayerInputs(portfolio::GameObject* playerPtr, const std::vector<SDL_FRect>& walkableZones = {}, bool canInteract = false, bool alwaysWood = true, const std::vector<SDL_FRect>& woodZones = {})
 {
@@ -197,6 +245,35 @@ void BindPlayerInputs(portfolio::GameObject* playerPtr, const std::vector<SDL_FR
     input.BindCommand(SDL_SCANCODE_DOWN, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 0, 1 }, playerSpeed, walkableZones, alwaysWood, woodZones));
     input.BindCommand(SDL_SCANCODE_LEFT, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ -1, 0 }, playerSpeed, walkableZones, alwaysWood, woodZones));
     input.BindCommand(SDL_SCANCODE_RIGHT, portfolio::KeyState::Pressed, std::make_unique<PlayerMoveCommand>(playerPtr, glm::vec2{ 1, 0 }, playerSpeed, walkableZones, alwaysWood, woodZones));
+
+    // Cancel autowalk when using WASD
+    input.BindCommand(SDL_SCANCODE_W, portfolio::KeyState::Down, std::make_unique<CancelAutoWalkCommand>(playerPtr));
+    input.BindCommand(SDL_SCANCODE_S, portfolio::KeyState::Down, std::make_unique<CancelAutoWalkCommand>(playerPtr));
+    input.BindCommand(SDL_SCANCODE_A, portfolio::KeyState::Down, std::make_unique<CancelAutoWalkCommand>(playerPtr));
+    input.BindCommand(SDL_SCANCODE_D, portfolio::KeyState::Down, std::make_unique<CancelAutoWalkCommand>(playerPtr));
+
+    // Sprint bindings
+    input.BindCommand(SDL_SCANCODE_LSHIFT, portfolio::KeyState::Down, std::make_unique<SprintCommand>(playerPtr, true));
+    input.BindCommand(SDL_SCANCODE_LSHIFT, portfolio::KeyState::Up, std::make_unique<SprintCommand>(playerPtr, false));
+
+    // Mouse bindings
+    input.BindMouseCommand(1, portfolio::KeyState::Down, std::make_unique<ActionCommand>([playerPtr]() {
+        HandleGlobalWebAudioAutoplay();
+        
+        glm::vec2 mousePos = portfolio::InputManager::GetInstance().GetMousePosition();
+        if (mousePos.x > 1250.0f && mousePos.y < 80.0f)
+        {
+            ToggleMuteGlobal();
+        }
+        else
+        {
+            auto controller = playerPtr->GetComponent<portfolio::PlayerControllerComponent>();
+            if (controller)
+            {
+                controller->SetTarget(mousePos);
+            }
+        }
+    }));
 
     input.BindCommand(SDL_SCANCODE_F2, portfolio::KeyState::Pressed, std::make_unique<ActionCommand>(ToggleMuteGlobal));
 
@@ -227,12 +304,41 @@ void BindProjectViewInputs(std::function<void()> onEsc, std::function<void()> on
     input.BindCommand(SDL_SCANCODE_E, portfolio::KeyState::Pressed, std::make_unique<ActionCommand>(onE));
 
     input.BindCommand(SDL_SCANCODE_F2, portfolio::KeyState::Pressed, std::make_unique<ActionCommand>(ToggleMuteGlobal));
+
+    input.BindMouseCommand(1, portfolio::KeyState::Down, std::make_unique<ActionCommand>([onEsc, onQ, onE]() 
+    {
+        HandleGlobalWebAudioAutoplay();
+        glm::vec2 mousePos = portfolio::InputManager::GetInstance().GetMousePosition();
+
+        if (mousePos.x > 1250.0f && mousePos.y < 80.0f)
+        {
+            ToggleMuteGlobal();
+            return;
+        }
+
+        if (mousePos.x < 300.0f && mousePos.y > 600.0f)
+        {
+            onQ();
+        }
+        else if (mousePos.x > 1066.0f && mousePos.y > 600.0f)
+        {
+            onE();
+        }
+        else if (mousePos.x < 150.0f && mousePos.y < 150.0f)
+        {
+            onEsc();
+        }
+        else if (mousePos.x > 500.0f && mousePos.x < 800.0f && mousePos.y < 100.0f)
+        {
+            onEsc();
+        }
+    }));
 }
 
 // SCENE BUILDERS
 void LoadMainMenu(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent*& tAbout, portfolio::TriggerComponent*& tContact, portfolio::TriggerComponent*& tProj)
 {
-    auto& scene = portfolio::SceneManager::GetInstance().CreateScene();
+    auto& scene = portfolio::SceneManager::GetInstance().GetScene(0);
 
     auto bg = std::make_unique<portfolio::GameObject>();
     bg->AddComponent<portfolio::RenderComponent>("MainMenuBackground.png");
@@ -272,7 +378,7 @@ void LoadMainMenu(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent
 
 void LoadAboutScene(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent*& tMain)
 {
-    auto& scene = portfolio::SceneManager::GetInstance().CreateScene();
+    auto& scene = portfolio::SceneManager::GetInstance().GetScene(1);
 
     auto bg = std::make_unique<portfolio::GameObject>();
     bg->AddComponent<portfolio::RenderComponent>("AboutBackground.png");
@@ -280,6 +386,7 @@ void LoadAboutScene(portfolio::GameObject*& outPlayer, portfolio::TriggerCompone
 
     auto player = std::make_unique<portfolio::GameObject>();
     player->AddComponent<portfolio::SpriteComponent>("PlayerSprite.png", 3, 3, 0.1f);
+    player->AddComponent<portfolio::PlayerControllerComponent>();
     outPlayer = player.get();
     scene.Add(std::move(player));
 
@@ -294,7 +401,7 @@ void LoadAboutScene(portfolio::GameObject*& outPlayer, portfolio::TriggerCompone
 
 void LoadContactScene(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent*& tMain)
 {
-    auto& scene = portfolio::SceneManager::GetInstance().CreateScene();
+    auto& scene = portfolio::SceneManager::GetInstance().GetScene(2);
 
     auto bg = std::make_unique<portfolio::GameObject>();
     bg->AddComponent<portfolio::RenderComponent>("ContactBackground.png");
@@ -302,6 +409,7 @@ void LoadContactScene(portfolio::GameObject*& outPlayer, portfolio::TriggerCompo
 
     auto player = std::make_unique<portfolio::GameObject>();
     player->AddComponent<portfolio::SpriteComponent>("PlayerSprite.png", 3, 3, 0.1f);
+    player->AddComponent<portfolio::PlayerControllerComponent>();
     outPlayer = player.get();
     scene.Add(std::move(player));
 
@@ -315,117 +423,179 @@ void LoadContactScene(portfolio::GameObject*& outPlayer, portfolio::TriggerCompo
 }
 
 // PROJECT SCENE GENERATOR
-void CreateSingleProjectScene(portfolio::TriggerComponent* flowerTrigger, const std::string& bgName, portfolio::GameObject* projectsPlayerPtr, int targetSceneIndex, int projectNumber)
+std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPlayerPtr, int targetSceneIndex, int projectNumber, const std::string& bgName)
 {
-    auto& scene = portfolio::SceneManager::GetInstance().CreateScene();
+    auto& scene = portfolio::SceneManager::GetInstance().GetScene(targetSceneIndex);
 
     std::vector<std::string> imageFiles;
 
     int numberOfImages = 0;
-    if (projectNumber == 1) numberOfImages = 3;
-    else if (projectNumber == 2) numberOfImages = 5;
-    else if (projectNumber == 3) numberOfImages = 1;
-    else if (projectNumber == 4) numberOfImages = 5;
-    else if (projectNumber == 5) numberOfImages = 8;
-    else if (projectNumber == 6) numberOfImages = 3;
+    if (projectNumber == 1) numberOfImages = 9;
+    else if (projectNumber == 2) numberOfImages = 6;
+    else if (projectNumber == 3) numberOfImages = 8;
+    else if (projectNumber == 4) numberOfImages = 4;
+    else if (projectNumber == 5) numberOfImages = 1;
+    else if (projectNumber == 6) numberOfImages = 5;
+    else if (projectNumber == 7) numberOfImages = 8;
+    else if (projectNumber == 8) numberOfImages = 3;
+    else if (projectNumber == 9) numberOfImages = 7;
+
+    std::vector<std::string> ytLinks;
+    ytLinks.resize(numberOfImages, "");
 
     for (int i = 1; i <= numberOfImages; ++i)
     {
         std::string numberPrefix = (i < 10) ? "0" + std::to_string(i) : std::to_string(i);
-        std::string relativePath = "Proj" + std::to_string(projectNumber) + "/P" + std::to_string(projectNumber) + "_" + numberPrefix + ".png";
+        std::string relativePath = "Proj" + std::to_string(projectNumber) + "/P" + std::to_string(projectNumber) + "_" + numberPrefix;
+        
+        std::string gifPath = relativePath + ".gif";
+        std::string pngPath = relativePath + ".png";
+        std::string txtPath = relativePath + ".txt";
 
-        imageFiles.push_back(relativePath);
+        if (std::filesystem::exists(std::filesystem::path("Data") / txtPath)) 
+        {
+            std::ifstream file(std::filesystem::path("Data") / txtPath);
+            std::string link;
+            if (std::getline(file, link)) 
+            {
+                ytLinks[i - 1] = link;
+            }
+        }
+
+        if (std::filesystem::exists(std::filesystem::path("Data") / gifPath)) 
+        {
+            imageFiles.push_back(gifPath);
+        } 
+        else 
+        {
+            imageFiles.push_back(pngPath);
+        }
     }
 
     auto slides = std::make_shared<std::vector<portfolio::GameObject*>>();
     auto currentIndex = std::make_shared<int>(0);
     auto lastSwitchTime = std::make_shared<std::chrono::steady_clock::time_point>(std::chrono::steady_clock::now());
 
-    glm::vec2 carouselPos = { 72.0f, 72.0f };
+    glm::vec2 carouselPos = { 69.0f, 69.0f };
 
     for (size_t i = 0; i < imageFiles.size(); ++i)
     {
         auto slideObj = std::make_unique<portfolio::GameObject>();
-        slideObj->AddComponent<portfolio::RenderComponent>(imageFiles[i]);
+        
+        if (imageFiles[i].length() > 4 && imageFiles[i].substr(imageFiles[i].length() - 4) == ".gif") 
+        {
+            auto comp = slideObj->AddComponent<portfolio::GifComponent>(imageFiles[i]);
+            comp->SetFillSize(875.0f, 515.0f);
+        } 
+        else 
+        {
+            auto comp = slideObj->AddComponent<portfolio::RenderComponent>(imageFiles[i]);
+            comp->SetFillSize(875.0f, 515.0f);
+        }
 
-        if (i == 0) slideObj->SetLocalPosition(carouselPos.x, carouselPos.y);
-        else slideObj->SetLocalPosition(-2000.0f, -2000.0f);
+        if (i == 0)
+        {
+            slideObj->SetLocalPosition(carouselPos.x, carouselPos.y);
+        }
+        else
+        {
+            slideObj->SetLocalPosition(-2000.0f, -2000.0f);
+        }
 
         slides->push_back(slideObj.get());
         scene.Add(std::move(slideObj));
     }
 
     auto bg = std::make_unique<portfolio::GameObject>();
-    bg->AddComponent<portfolio::RenderComponent>(bgName);
+    auto bgComp = bg->AddComponent<portfolio::RenderComponent>(bgName);
+    bgComp->SetScale(1366.0f / 1920.0f); // Scale down the 1920x1080 image to match 1366x768 canvas
     scene.Add(std::move(bg));
 
+    auto updateYtOverlay = [ytLinks, currentIndex]() 
+    {
+#ifdef __EMSCRIPTEN__
+        std::string link = ytLinks[*currentIndex];
+        if (!link.empty()) 
+        {
+            std::string js = "document.getElementById('video-container').style.display = 'block'; " "document.getElementById('yt-iframe').src = '" + link + "';";
+            emscripten_run_script(js.c_str());
+        } 
+        else 
+        {
+            emscripten_run_script("document.getElementById('video-container').style.display = 'none'; " "document.getElementById('yt-iframe').src = '';");
+        }
+#endif
+    };
+
     auto onEsc = [projectsPlayerPtr]()
-        {
-            std::cout << "Returning to Projects...\n";
-            portfolio::SceneManager::GetInstance().TransitionToScene(3, [projectsPlayerPtr]()
-                {
-                    std::vector<SDL_FRect> projectsWoodZones = { SDL_FRect{ 636.0f, 0.0f, 100.0f, 272.0f } };
-                    BindPlayerInputs(projectsPlayerPtr, {}, true, false, projectsWoodZones);
-                });
-        };
+    {
+         std::cout << "Returning to Projects...\n";
+#ifdef __EMSCRIPTEN__
+         emscripten_run_script("document.getElementById('video-container').style.display = 'none'; " "document.getElementById('yt-iframe').src = '';");
+#endif
+         portfolio::SceneManager::GetInstance().TransitionToScene(3, [projectsPlayerPtr]()
+         {
+             std::vector<SDL_FRect> projectsWoodZones = { SDL_FRect{ 636.0f, 0.0f, 100.0f, 272.0f } };
+             BindPlayerInputs(projectsPlayerPtr, {}, true, false, projectsWoodZones);
+        });
+    };
 
-    auto onQ = [slides, currentIndex, carouselPos, lastSwitchTime]()
-        {
-            if (slides->empty()) return;
+    auto onQ = [slides, currentIndex, carouselPos, lastSwitchTime, updateYtOverlay]()
+    {
+         if (slides->empty()) return;
 
-            auto now = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - *lastSwitchTime).count() < 250) return;
-            *lastSwitchTime = now;
+         auto now = std::chrono::steady_clock::now();
+         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - *lastSwitchTime).count() < 250) return;
+         *lastSwitchTime = now;
 
-            (*slides)[*currentIndex]->SetLocalPosition(-2000.0f, -2000.0f);
-            int totalSlides = static_cast<int>(slides->size());
-            *currentIndex = (*currentIndex - 1 + totalSlides) % totalSlides;
-            (*slides)[*currentIndex]->SetLocalPosition(carouselPos.x, carouselPos.y);
-        };
+         (*slides)[*currentIndex]->SetLocalPosition(-2000.0f, -2000.0f);
+         int totalSlides = static_cast<int>(slides->size());
+         *currentIndex = (*currentIndex - 1 + totalSlides) % totalSlides;
+         (*slides)[*currentIndex]->SetLocalPosition(carouselPos.x, carouselPos.y);
+            
+         updateYtOverlay();
+    };
 
-    auto onE = [slides, currentIndex, carouselPos, lastSwitchTime]()
-        {
-            if (slides->empty()) return;
+    auto onE = [slides, currentIndex, carouselPos, lastSwitchTime, updateYtOverlay]()
+    {
+        if (slides->empty()) return;
 
-            auto now = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - *lastSwitchTime).count() < 250) return;
-            *lastSwitchTime = now;
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - *lastSwitchTime).count() < 250) return;
+        *lastSwitchTime = now;
 
-            (*slides)[*currentIndex]->SetLocalPosition(-2000.0f, -2000.0f);
-            int totalSlides = static_cast<int>(slides->size());
-            *currentIndex = (*currentIndex + 1) % totalSlides;
-            (*slides)[*currentIndex]->SetLocalPosition(carouselPos.x, carouselPos.y);
-        };
+        (*slides)[*currentIndex]->SetLocalPosition(-2000.0f, -2000.0f);
+        int totalSlides = static_cast<int>(slides->size());
+        *currentIndex = (*currentIndex + 1) % totalSlides;
+        (*slides)[*currentIndex]->SetLocalPosition(carouselPos.x, carouselPos.y);
+            
+        updateYtOverlay();
+    };
 
-    g_ProjectInteractions.push_back({ flowerTrigger, [targetSceneIndex, onEsc, onQ, onE]()
+    AddMuteIconsToScene(scene);
+    return [targetSceneIndex, onEsc, onQ, onE, updateYtOverlay]()
     {
         std::cout << "Loading Project Screen...\n";
 
-        portfolio::SceneManager::GetInstance().TransitionToScene(targetSceneIndex, [onEsc, onQ, onE]()
+        portfolio::SceneManager::GetInstance().TransitionToScene(targetSceneIndex, [onEsc, onQ, onE, updateYtOverlay]()
         {
                 BindProjectViewInputs(onEsc, onQ, onE);
-            });
-        } });
-
-    AddMuteIconsToScene(scene);
+                updateYtOverlay();
+        });
+    };
 }
 
 void LoadProjectsScene(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent*& tMain)
 {
-    auto& scene = portfolio::SceneManager::GetInstance().CreateScene();
+    auto& scene = portfolio::SceneManager::GetInstance().GetScene(3);
 
     auto bg = std::make_unique<portfolio::GameObject>();
     bg->AddComponent<portfolio::RenderComponent>("ProjectsBackground.png");
     scene.Add(std::move(bg));
 
-    auto popupObj = std::make_unique<portfolio::GameObject>();
-    popupObj->AddComponent<portfolio::RenderComponent>("PressE.png");
-    popupObj->SetLocalPosition(-2000.0f, -2000.0f);
-    auto popupPtr = popupObj.get();
-    scene.Add(std::move(popupObj));
-
     auto player = std::make_unique<portfolio::GameObject>();
     player->AddComponent<portfolio::SpriteComponent>("PlayerSprite.png", 3, 3, 0.1f);
+    player->AddComponent<portfolio::PlayerControllerComponent>();
     outPlayer = player.get();
     scene.Add(std::move(player));
 
@@ -435,41 +605,65 @@ void LoadProjectsScene(portfolio::GameObject*& outPlayer, portfolio::TriggerComp
     tMain->SetTarget(outPlayer, 88.0f, 120.0f);
     scene.Add(std::move(trMain));
 
-    struct ProjectInfo {
-        glm::vec2 triggerPos;
+    struct ProjectInfo
+    {
         glm::vec2 popupPos;
         std::string bgImageName;
     };
 
-    std::vector<ProjectInfo> projects = {
-        { {692.0f, 484.0f}, {884.0f, 620.0f}, "Proj1_Bg.png" },
-        { {301.0f, 309.0f}, {488.0f, 445.0f}, "Proj2_Bg.png" },
-        { {8.0f, 29.0f}, {196.0f, 160.0f}, "Proj3_Bg.png" },
-        { {40.0f, 524.0f}, {217.0f, 648.0f}, "Proj4_Bg.png" },
-        { {789.0f, 45.0f}, {964.0f, 184.0f}, "Proj5_Bg.png" },
-        { {908.0f, 292.0f}, {1130.0f, 436.0f}, "Proj6_Bg.png" }
+    std::vector<ProjectInfo> projects = 
+    {
+        { {1196.0f, 305.0f}, "Proj1_Bg.png" },
+        { {1149.0f, 631.0f}, "Proj2_Bg.png" },
+        { {522.0f, 457.0f}, "Proj3_Bg.png" },
+        { {248.0f, 635.0f}, "Proj4_Bg.png" },
+        { {195.0f, 293.0f}, "Proj5_Bg.png" },
+        { {748.0f, 667.0f}, "Proj6_Bg.png" },
+        { {895.0f, 423.0f}, "Proj7_Bg.png" },
+        { {407.0f, 111.0f}, "Proj8_Bg.png" },
+        { {1011.0f, 133.0f}, "Proj9_Bg.png" }
     };
 
     for (size_t i = 0; i < projects.size(); ++i)
     {
         auto flowerObj = std::make_unique<portfolio::GameObject>();
-        flowerObj->SetLocalPosition(projects[i].triggerPos.x, projects[i].triggerPos.y);
-        auto tComp = flowerObj->AddComponent<portfolio::TriggerComponent>(223.0f, 223.0f);
+        flowerObj->SetLocalPosition(projects[i].popupPos.x - 120.0f, projects[i].popupPos.y - 50.0f);
+        auto tComp = flowerObj->AddComponent<portfolio::TriggerComponent>(180.0f, 180.0f);
         tComp->SetTarget(outPlayer, 88.0f, 120.0f);
 
         glm::vec2 customPopupPos = projects[i].popupPos;
+        auto popupObj = std::make_unique<portfolio::GameObject>();
+        popupObj->AddComponent<portfolio::RenderComponent>("PressE.png");
+        popupObj->SetLocalPosition(-2000.0f, -2000.0f);
+        auto popupPtr = popupObj.get();
+        scene.Add(std::move(popupObj));
 
         tComp->SetOnTriggerEnter([popupPtr, customPopupPos]()
-            {
-                popupPtr->SetLocalPosition(customPopupPos.x, customPopupPos.y);
-            });
+        {
+            popupPtr->SetLocalPosition(customPopupPos.x, customPopupPos.y);
+        });
 
         tComp->SetOnTriggerExit([popupPtr]()
-            {
-                popupPtr->SetLocalPosition(-2000.0f, -2000.0f);
-            });
+        {
+            popupPtr->SetLocalPosition(-2000.0f, -2000.0f);
+        });
 
-        CreateSingleProjectScene(tComp, projects[i].bgImageName, outPlayer, static_cast<int>(4 + i), static_cast<int>(i + 1));
+        int targetSceneIndex = static_cast<int>(4 + i);
+        int projectNumber = static_cast<int>(i + 1);
+        std::string bgImageName = projects[i].bgImageName;
+        
+        g_ProjectInteractions.push_back({ tComp, [targetSceneIndex, projectNumber, bgImageName, outPlayer]()
+        {
+            static std::function<void()> transitionFuncs[10];
+            
+            if (!transitionFuncs[projectNumber]) 
+            {
+                std::cout << "Building Project Scene " << projectNumber << "...\n";
+                transitionFuncs[projectNumber] = CreateSingleProjectScene(outPlayer, targetSceneIndex, projectNumber, bgImageName);
+            }
+            
+            transitionFuncs[projectNumber]();
+        } });
         scene.Add(std::move(flowerObj));
     }
 
@@ -480,6 +674,11 @@ void LoadProjectsScene(portfolio::GameObject*& outPlayer, portfolio::TriggerComp
 void load()
 {
     std::cout << "Welcome to the Portfolio!\n";
+
+    for (int i = 0; i < 13; ++i)
+    {
+        portfolio::SceneManager::GetInstance().CreateScene();
+    }
 
     std::string dataPath = "";
 #ifdef __EMSCRIPTEN__
@@ -534,66 +733,94 @@ void load()
     std::vector<SDL_FRect> projectsWoodZones = { SDL_FRect{ 636.0f, 0.0f, 100.0f, 272.0f } };
 
     tMainToAbout->SetOnTriggerEnter([p2, aboutScenePlanks]()
+    {
+        portfolio::InputManager::GetInstance().UnbindAll();
+        portfolio::SceneManager::GetInstance().TransitionToScene(1, [p2, aboutScenePlanks]()
         {
-            portfolio::InputManager::GetInstance().UnbindAll();
-            portfolio::SceneManager::GetInstance().TransitionToScene(1, [p2, aboutScenePlanks]()
-                {
-                    p2->SetLocalPosition(642.5f, 768.0f - 160.0f);
-                    BindPlayerInputs(p2, aboutScenePlanks, false, true); // true = always Wood
-                });
+            p2->SetLocalPosition(642.5f, 768.0f - 160.0f);
+            if (auto pc = p2->GetComponent<portfolio::PlayerControllerComponent>()) 
+            {
+                pc->ConfigureZones(aboutScenePlanks, true, {});
+            }
+            BindPlayerInputs(p2, aboutScenePlanks, false, true); // true = always Wood
         });
+    });
 
     tMainToContact->SetOnTriggerEnter([p3, contactScenePlanks]()
+    {
+        portfolio::InputManager::GetInstance().UnbindAll();
+        portfolio::SceneManager::GetInstance().TransitionToScene(2, [p3, contactScenePlanks]()
         {
-            portfolio::InputManager::GetInstance().UnbindAll();
-            portfolio::SceneManager::GetInstance().TransitionToScene(2, [p3, contactScenePlanks]()
-                {
-                    p3->SetLocalPosition(150.0f, 400.0f);
-                    BindPlayerInputs(p3, contactScenePlanks, false, true); // true = always Wood
-                });
+            p3->SetLocalPosition(150.0f, 400.0f);
+            if (auto pc = p3->GetComponent<portfolio::PlayerControllerComponent>()) 
+            {
+                pc->ConfigureZones(contactScenePlanks, true, {});
+            }
+            BindPlayerInputs(p3, contactScenePlanks, false, true); // true = always Wood
         });
+    });
 
     tMainToProj->SetOnTriggerEnter([p4, projectsWoodZones]()
+    {
+        portfolio::InputManager::GetInstance().UnbindAll();
+        portfolio::SceneManager::GetInstance().TransitionToScene(3, [p4, projectsWoodZones]()
         {
-            portfolio::InputManager::GetInstance().UnbindAll();
-            portfolio::SceneManager::GetInstance().TransitionToScene(3, [p4, projectsWoodZones]()
-                {
-                    p4->SetLocalPosition(642.5f, 95.0f);
-					BindPlayerInputs(p4, {}, true, false, projectsWoodZones); // false = not always wood
-                });
+            p4->SetLocalPosition(642.5f, 95.0f);
+            if (auto pc = p4->GetComponent<portfolio::PlayerControllerComponent>()) 
+            {
+                pc->ConfigureZones({}, false, projectsWoodZones);
+            }
+			BindPlayerInputs(p4, {}, true, false, projectsWoodZones); // false = not always wood
         });
+    });
 
     tAboutToMain->SetOnTriggerEnter([p1, mainScenePlanks]()
+    {
+        portfolio::InputManager::GetInstance().UnbindAll();
+        portfolio::SceneManager::GetInstance().TransitionToScene(0, [p1, mainScenePlanks]()
         {
-            portfolio::InputManager::GetInstance().UnbindAll();
-            portfolio::SceneManager::GetInstance().TransitionToScene(0, [p1, mainScenePlanks]()
-                {
-                    p1->SetLocalPosition(642.5f, 95.0f);
-                    BindPlayerInputs(p1, mainScenePlanks, false, true);
-                });
+            p1->SetLocalPosition(642.5f, 95.0f);
+            if (auto pc = p1->GetComponent<portfolio::PlayerControllerComponent>()) 
+            {
+                pc->ConfigureZones(mainScenePlanks, true, {});
+            }
+            BindPlayerInputs(p1, mainScenePlanks, false, true);
         });
+    });
 
     tContactToMain->SetOnTriggerEnter([p1, mainScenePlanks]()
+    {
+        portfolio::InputManager::GetInstance().UnbindAll();
+        portfolio::SceneManager::GetInstance().TransitionToScene(0, [p1, mainScenePlanks]()
         {
-            portfolio::InputManager::GetInstance().UnbindAll();
-            portfolio::SceneManager::GetInstance().TransitionToScene(0, [p1, mainScenePlanks]()
-                {
-                    p1->SetLocalPosition(1366.0f - 250.0f, 400.0f);
-                    BindPlayerInputs(p1, mainScenePlanks, false, true);
-                });
+            p1->SetLocalPosition(1366.0f - 250.0f, 400.0f);
+            if (auto pc = p1->GetComponent<portfolio::PlayerControllerComponent>()) 
+            {
+                pc->ConfigureZones(mainScenePlanks, true, {});
+            }
+            BindPlayerInputs(p1, mainScenePlanks, false, true);
         });
+    });
 
     tProjToMain->SetOnTriggerEnter([p1, mainScenePlanks]()
+    {
+        portfolio::InputManager::GetInstance().UnbindAll();
+        portfolio::SceneManager::GetInstance().TransitionToScene(0, [p1, mainScenePlanks]()
         {
-            portfolio::InputManager::GetInstance().UnbindAll();
-            portfolio::SceneManager::GetInstance().TransitionToScene(0, [p1, mainScenePlanks]()
-                {
-                    p1->SetLocalPosition(642.5f, 768.0f - 250.0f);
-                    BindPlayerInputs(p1, mainScenePlanks, false, true);
-                });
+            p1->SetLocalPosition(642.5f, 768.0f - 250.0f);
+            if (auto pc = p1->GetComponent<portfolio::PlayerControllerComponent>()) 
+            {
+                pc->ConfigureZones(mainScenePlanks, true, {});
+            }
+            BindPlayerInputs(p1, mainScenePlanks, false, true);
         });
+    });
 
     // START GAME
+    if (auto pc = p1->GetComponent<portfolio::PlayerControllerComponent>()) 
+    {
+        pc->ConfigureZones(mainScenePlanks, true, {});
+    }
     BindPlayerInputs(p1, mainScenePlanks, false, true); // true = Always Wood
     portfolio::SceneManager::GetInstance().SetActiveScene(0);
 }
