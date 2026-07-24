@@ -31,7 +31,11 @@ jobs:
         run: |
           mkdir web_ready
           cd build
-          if [ -f "Portfolio_web.html" ]; then
+          if [ -f "AnaCarvalho-GamePortfolio.html" ]; then
+            mv AnaCarvalho-GamePortfolio.html index.html
+          elif [ -f "Portfolio.html" ]; then
+            mv Portfolio.html index.html
+          elif [ -f "Portfolio_web.html" ]; then
             mv Portfolio_web.html index.html
           fi
           cp index.html ../web_ready/
