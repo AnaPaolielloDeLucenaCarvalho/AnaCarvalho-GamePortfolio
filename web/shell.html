@@ -69,6 +69,35 @@
             })()
         };
     </script>
+    <script type='text/javascript'>
+        var originalAudioContext = window.AudioContext || window.webkitAudioContext;
+        var activeContexts = [];
+        if (originalAudioContext) {
+            window.AudioContext = function() {
+                var ctx = new originalAudioContext(arguments[0]);
+                activeContexts.push(ctx);
+                return ctx;
+            };
+            window.AudioContext.prototype = originalAudioContext.prototype;
+            window.webkitAudioContext = window.AudioContext;
+        }
+
+        function resumeAllAudio() {
+            activeContexts.forEach(function(ctx) {
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+            });
+            
+            if (typeof WEBAudio !== 'undefined' && WEBAudio.audioContext && WEBAudio.audioContext.state === 'suspended') {
+                WEBAudio.audioContext.resume();
+            }
+        }
+        
+        window.addEventListener('keydown', resumeAllAudio, { capture: true, once: true });
+        window.addEventListener('mousedown', resumeAllAudio, { capture: true, once: true });
+        window.addEventListener('touchstart', resumeAllAudio, { capture: true, once: true });
+    </script>
 
     {{{ SCRIPT }}}
 </body>
