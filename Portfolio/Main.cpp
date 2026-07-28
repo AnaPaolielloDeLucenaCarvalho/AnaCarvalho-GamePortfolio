@@ -246,7 +246,7 @@ void BindPlayerInputs(portfolio::GameObject* playerPtr, bool canInteract = false
         }
         else
         {
-            if (portfolio::SceneManager::GetInstance().GetActiveSceneIndex() == 2)
+            if (portfolio::SceneManager::GetInstance().GetActiveScene() == 2)
             {
                 if (mousePos.x >= 703 && mousePos.x <= 703 + 487 && mousePos.y >= 354 && mousePos.y <= 354 + 45) return;
                 if (mousePos.x >= 703 && mousePos.x <= 703 + 487 && mousePos.y >= 404 && mousePos.y <= 404 + 75) return;
