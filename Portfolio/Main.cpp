@@ -295,6 +295,7 @@ void LoadMainMenu(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent
     player->AddComponent<portfolio::SpriteComponent>("PlayerSprite.png", 3, 3, 0.1f);
     player->AddComponent<portfolio::PlayerControllerComponent>();
     player->SetLocalPosition(642.5f, 400.0f);
+    player->SetSortOffset(120.0f);
     outPlayer = player.get();
     scene.Add(std::move(player));
 
@@ -305,9 +306,11 @@ void LoadMainMenu(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent
         pillar->SetLocalPosition(x, y);
         pillar->SetLayer(layer);
         
+        auto size = rc->GetTextureSize();
+        pillar->SetSortOffset((float)size.y);
+
         if (hasCollision && outPlayer)
         {
-            auto size = rc->GetTextureSize();
             float boxHeight = 30.0f; 
             outPlayer->GetComponent<portfolio::PlayerControllerComponent>()->AddObstacle({x, y + size.y - boxHeight, (float)size.x, boxHeight});
         }
@@ -316,18 +319,19 @@ void LoadMainMenu(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent
 
     addPillar(604.0f, -68.0f, "Wood.png");
     addPillar(724.0f, -68.0f, "Wood.png");
-    addPillar(604.0f, 36.0f, "WoodAbout.png");
+    addPillar(604.0f, 36.0f, "WoodAbout.png", false, false);
     addPillar(724.0f, 228.0f, "Wood.png");
     addPillar(604.0f, 228.0f, "Wood.png", true);
     addPillar(604.0f, 376.0f, "Wood.png");
     addPillar(724.0f, 376.0f, "Wood.png");
     addPillar(724.0f, 492.0f, "Wood.png");
     addPillar(604.0f, 492.0f, "Wood.png");
-    addPillar(604.0f, 596.0f, "WoodProjects.png");
+    addPillar(604.0f, 596.0f, "WoodProjects.png", false, false);
 
     auto treeTop = std::make_unique<portfolio::GameObject>();
     treeTop->AddComponent<portfolio::RenderComponent>("MainMenuTop.png");
     treeTop->SetLocalPosition(159.0f, 442.0f);
+    treeTop->SetLayer(2);
     scene.Add(std::move(treeTop));
 
     auto tr1 = std::make_unique<portfolio::GameObject>();
@@ -363,19 +367,23 @@ void LoadAboutScene(portfolio::GameObject*& outPlayer, portfolio::TriggerCompone
     auto player = std::make_unique<portfolio::GameObject>();
     player->AddComponent<portfolio::SpriteComponent>("PlayerSprite.png", 3, 3, 0.1f);
     player->AddComponent<portfolio::PlayerControllerComponent>();
+    player->SetSortOffset(120.0f);
     outPlayer = player.get();
     scene.Add(std::move(player));
 
-    auto addPillar = [&](float x, float y, const std::string& tex, bool flip = false, bool hasCollision = true, int layer = 1) {
+    auto addPillar = [&](float x, float y, const std::string& tex, bool flip = false, bool hasCollision = true, int layer = 1) 
+    {
         auto pillar = std::make_unique<portfolio::GameObject>();
         auto rc = pillar->AddComponent<portfolio::RenderComponent>(tex);
         if (flip) rc->SetFlip(true);
         pillar->SetLocalPosition(x, y);
         pillar->SetLayer(layer);
         
+        auto size = rc->GetTextureSize();
+        pillar->SetSortOffset((float)size.y);
+
         if (hasCollision && outPlayer)
         {
-            auto size = rc->GetTextureSize();
             float boxHeight = 30.0f; 
             outPlayer->GetComponent<portfolio::PlayerControllerComponent>()->AddObstacle({x, y + size.y - boxHeight, (float)size.x, boxHeight});
         }
@@ -410,12 +418,13 @@ void LoadContactScene(portfolio::GameObject*& outPlayer, portfolio::TriggerCompo
     auto contactTop = std::make_unique<portfolio::GameObject>();
     contactTop->AddComponent<portfolio::RenderComponent>("ContactTop.png");
     contactTop->SetLocalPosition(0.0f, 330.0f);
-    contactTop->SetLayer(2); // Always on top of everything
+    contactTop->SetLayer(2);
     scene.Add(std::move(contactTop));
 
     auto player = std::make_unique<portfolio::GameObject>();
     player->AddComponent<portfolio::SpriteComponent>("PlayerSprite.png", 3, 3, 0.1f);
     player->AddComponent<portfolio::PlayerControllerComponent>();
+    player->SetSortOffset(120.0f);
     outPlayer = player.get();
     scene.Add(std::move(player));
 
@@ -535,7 +544,7 @@ std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPl
 
     auto bg = std::make_unique<portfolio::GameObject>();
     auto bgComp = bg->AddComponent<portfolio::RenderComponent>(bgName);
-    bgComp->SetScale(1366.0f / 1920.0f); // Scale down the 1920x1080 image to match 1366x768 canvas
+    bgComp->SetScale(1366.0f / 1920.0f); // Scale down 1920x1080 to match 1366x768
     scene.Add(std::move(bg));
 
     auto updateYtOverlay = [ytLinks, currentIndex]() 
@@ -629,6 +638,7 @@ void LoadProjectsScene(portfolio::GameObject*& outPlayer, portfolio::TriggerComp
     auto player = std::make_unique<portfolio::GameObject>();
     player->AddComponent<portfolio::SpriteComponent>("PlayerSprite.png", 3, 3, 0.1f);
     player->AddComponent<portfolio::PlayerControllerComponent>();
+    player->SetSortOffset(120.0f);
     outPlayer = player.get();
     scene.Add(std::move(player));
 
@@ -640,9 +650,11 @@ void LoadProjectsScene(portfolio::GameObject*& outPlayer, portfolio::TriggerComp
         pillar->SetLocalPosition(x, y);
         pillar->SetLayer(layer);
         
+        auto size = rc->GetTextureSize();
+        pillar->SetSortOffset((float)size.y);
+
         if (hasCollision && outPlayer)
         {
-            auto size = rc->GetTextureSize();
             float boxHeight = 30.0f; 
             outPlayer->GetComponent<portfolio::PlayerControllerComponent>()->AddObstacle({x, y + size.y - boxHeight, (float)size.x, boxHeight});
         }

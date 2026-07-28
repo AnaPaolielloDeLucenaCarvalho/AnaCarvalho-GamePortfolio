@@ -51,7 +51,7 @@ void Scene::Render() const
 		{
 			return a->GetLayer() < b->GetLayer();
 		}
-		return a->GetTransform().GetPosition().y < b->GetTransform().GetPosition().y;
+		return a->GetSortY() < b->GetSortY();
 	});
 
 	for (const auto& object : sortedObjects)

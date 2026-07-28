@@ -1,4 +1,4 @@
-#ifndef COMPONENT_H // No #pragma once, use include guards (for tom's sake)
+#ifndef COMPONENT_H
 #define COMPONENT_H
 
 namespace portfolio

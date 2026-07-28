@@ -1,4 +1,4 @@
-#ifndef GAMEOBJECT_H // No #pragma once, use include guards (for tom's sake)
+#ifndef GAMEOBJECT_H
 #define GAMEOBJECT_H
 
 #include <string>
@@ -21,6 +21,7 @@ namespace portfolio
         std::vector<GameObject*> m_pChildren{};
         bool m_positionIsDirty{ false };
         int m_Layer{ 1 }; // 0 = Background, 1 = Default (Y-Sorted), 2 = UI
+        float m_SortOffset{ 0.0f };
 
         void UpdateWorldTransform();
 
@@ -44,6 +45,9 @@ namespace portfolio
 
         void SetLayer(int layer) { m_Layer = layer; }
         int GetLayer() const { return m_Layer; }
+
+        void SetSortOffset(float offset) { m_SortOffset = offset; }
+        float GetSortY() const { return m_worldTransform.GetPosition().y + m_SortOffset; }
 
         void SetParent(GameObject* parent, bool keepWorldPosition);
         GameObject* GetParent() const { return m_pParent; }

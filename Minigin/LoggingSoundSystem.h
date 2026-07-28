@@ -14,19 +14,19 @@ namespace portfolio
 
         void play(const sound_id id, const float volume) override
         {
-            std::cout << "[Sound Logger] Playing sound ID: " << id << " at volume: " << volume << "\n";
+            //std::cout << "[Sound Logger] Playing sound ID: " << id << " at volume: " << volume << "\n";
             _real_ss->play(id, volume);
         }
 
         void loadSound(const sound_id id, const std::string& filePath) override
         {
-            std::cout << "[Sound Logger] Loading sound ID: " << id << " from " << filePath << "\n";
+            //std::cout << "[Sound Logger] Loading sound ID: " << id << " from " << filePath << "\n";
             _real_ss->loadSound(id, filePath);
         }
 
         void ToggleMute() override
         {
-            std::cout << "[Sound Logger] Toggling Audio Mute State\n";
+            //std::cout << "[Sound Logger] Toggling Audio Mute State\n";
             _real_ss->ToggleMute();
         }
 
