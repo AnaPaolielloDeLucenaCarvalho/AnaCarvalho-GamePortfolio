@@ -176,6 +176,40 @@ public:
     }
 };
 
+class ContactClickCommand : public portfolio::Command
+{
+public:
+    void Execute(float) override
+    {
+        glm::vec2 mousePos = portfolio::InputManager::GetInstance().GetMousePosition();
+        
+        // Email: x703 y354 w487 h45
+        if (mousePos.x >= 703 && mousePos.x <= 703 + 487 &&
+            mousePos.y >= 354 && mousePos.y <= 354 + 45)
+        {
+#ifdef __EMSCRIPTEN__
+            emscripten_run_script("window.open('mailto:anapaoliello@hotmail.com', '_self');");
+#endif
+        }
+        // LinkedIn: x703 y404 w487 h97
+        else if (mousePos.x >= 703 && mousePos.x <= 703 + 487 &&
+                 mousePos.y >= 404 && mousePos.y <= 404 + 97)
+        {
+#ifdef __EMSCRIPTEN__
+            emscripten_run_script("window.open('https://www.linkedin.com/in/ana-pl-carvalho', '_blank');");
+#endif
+        }
+        // GitHub: x703 y499 w487 h90
+        else if (mousePos.x >= 703 && mousePos.x <= 703 + 487 &&
+                 mousePos.y >= 499 && mousePos.y <= 499 + 90)
+        {
+#ifdef __EMSCRIPTEN__
+            emscripten_run_script("window.open('https://github.com/AnaPaolielloDeLucenaCarvalho', '_blank');");
+#endif
+        }
+    }
+};
+
 // INPUT BINDINGS
 void BindPlayerInputs(portfolio::GameObject* playerPtr, bool canInteract = false)
 {
@@ -537,6 +571,8 @@ std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPl
         {
             slideObj->SetLocalPosition(-2000.0f, -2000.0f);
         }
+        
+        slideObj->SetLayer(0);
 
         slides->push_back(slideObj.get());
         scene.Add(std::move(slideObj));
@@ -545,6 +581,7 @@ std::function<void()> CreateSingleProjectScene(portfolio::GameObject* projectsPl
     auto bg = std::make_unique<portfolio::GameObject>();
     auto bgComp = bg->AddComponent<portfolio::RenderComponent>(bgName);
     bgComp->SetScale(1366.0f / 1920.0f); // Scale down 1920x1080 to match 1366x768
+    bg->SetLayer(1);
     scene.Add(std::move(bg));
 
     auto updateYtOverlay = [ytLinks, currentIndex]() 
@@ -829,14 +866,15 @@ void load()
         portfolio::InputManager::GetInstance().UnbindAll();
         portfolio::SceneManager::GetInstance().TransitionToScene(2, [p3, contactScenePlanks]()
         {
-            p3->SetLocalPosition(150.0f, 400.0f);
+            p3->SetLocalPosition(0.0f, 388.0f);
             if (auto pc = p3->GetComponent<portfolio::PlayerControllerComponent>()) 
             {
-                pc->ConfigureZones(contactScenePlanks, true, {});
+                pc->ConfigureZones(contactScenePlanks, false, {});
                 pc->CancelAutoWalk();
                 pc->SetSpeed(150.0f);
             }
             BindPlayerInputs(p3, false);
+            portfolio::InputManager::GetInstance().BindMouseCommand(1, portfolio::KeyState::Pressed, std::make_unique<ContactClickCommand>());
         });
     });
 
