@@ -191,9 +191,8 @@ public:
             emscripten_run_script("window.open('mailto:anapaoliello@hotmail.com', '_self');");
 #endif
         }
-        // LinkedIn: x703 y404 w487 h97
         else if (mousePos.x >= 703 && mousePos.x <= 703 + 487 &&
-                 mousePos.y >= 404 && mousePos.y <= 404 + 97)
+                 mousePos.y >= 404 && mousePos.y <= 404 + 75)
         {
 #ifdef __EMSCRIPTEN__
             emscripten_run_script("window.open('https://www.linkedin.com/in/ana-pl-carvalho', '_blank');");
@@ -247,6 +246,13 @@ void BindPlayerInputs(portfolio::GameObject* playerPtr, bool canInteract = false
         }
         else
         {
+            if (portfolio::SceneManager::GetInstance().GetActiveSceneIndex() == 2)
+            {
+                if (mousePos.x >= 703 && mousePos.x <= 703 + 487 && mousePos.y >= 354 && mousePos.y <= 354 + 45) return;
+                if (mousePos.x >= 703 && mousePos.x <= 703 + 487 && mousePos.y >= 404 && mousePos.y <= 404 + 75) return;
+                if (mousePos.x >= 703 && mousePos.x <= 703 + 487 && mousePos.y >= 499 && mousePos.y <= 499 + 90) return;
+            }
+
             auto controller = playerPtr->GetComponent<portfolio::PlayerControllerComponent>();
             if (controller)
             {
