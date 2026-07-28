@@ -38,7 +38,23 @@ void Scene::Update(float deltaTime)
 
 void Scene::Render() const
 {
-	for (const auto& object : m_objects)
+	std::vector<GameObject*> sortedObjects;
+	sortedObjects.reserve(m_objects.size());
+	for (const auto& obj : m_objects)
+	{
+		sortedObjects.push_back(obj.get());
+	}
+
+	std::stable_sort(sortedObjects.begin(), sortedObjects.end(), [](GameObject* a, GameObject* b) 
+	{
+		if (a->GetLayer() != b->GetLayer())
+		{
+			return a->GetLayer() < b->GetLayer();
+		}
+		return a->GetTransform().GetPosition().y < b->GetTransform().GetPosition().y;
+	});
+
+	for (const auto& object : sortedObjects)
 	{
 		object->Render();
 	}

@@ -26,11 +26,11 @@ void portfolio::GameObject::SetLocalPosition(float x, float y)
 	SetPositionDirty();
 }
 
-const portfolio::Transform& portfolio::GameObject::GetTransform()
+const portfolio::Transform& portfolio::GameObject::GetTransform() const
 {
 	if (m_positionIsDirty)
 	{
-		UpdateWorldTransform();
+		const_cast<GameObject*>(this)->UpdateWorldTransform();
 	}
 	return m_worldTransform;
 }

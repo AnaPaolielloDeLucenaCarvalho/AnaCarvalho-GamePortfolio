@@ -17,10 +17,10 @@ namespace portfolio
 		std::vector<std::unique_ptr<Component>> m_Components;
 		bool m_isMarkedForDestroy{ false };
 
-        // W02
         GameObject* m_pParent{ nullptr };
         std::vector<GameObject*> m_pChildren{};
         bool m_positionIsDirty{ false };
+        int m_Layer{ 1 }; // 0 = Background, 1 = Default (Y-Sorted), 2 = UI
 
         void UpdateWorldTransform();
 
@@ -39,8 +39,11 @@ namespace portfolio
 		void Render() const;
 
         void SetLocalPosition(float x, float y);
-        const Transform& GetTransform();
+        const Transform& GetTransform() const;
         void SetPositionDirty();
+
+        void SetLayer(int layer) { m_Layer = layer; }
+        int GetLayer() const { return m_Layer; }
 
         void SetParent(GameObject* parent, bool keepWorldPosition);
         GameObject* GetParent() const { return m_pParent; }

@@ -1,9 +1,10 @@
-#ifndef RENDERCOMPONENT_H // No #pragma once, use include guards (for tom's sake)
+#ifndef RENDERCOMPONENT_H
 #define RENDERCOMPONENT_H
 
 #include <string>
 #include <memory>
 #include "Component.h"
+#include <glm/glm.hpp>
 
 namespace portfolio
 {
@@ -26,6 +27,8 @@ namespace portfolio
         void SetScale(float scale) { m_Scale = scale; }
         void SetRotation(double angle) { m_Angle = angle; }
         void SetFillSize(float w, float h) { m_ForcedWidth = w; m_ForcedHeight = h; m_UseFillSize = true; }
+
+        glm::ivec2 GetTextureSize() const;
 
     private:
         std::shared_ptr<Texture2D> m_texture;

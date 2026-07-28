@@ -58,4 +58,10 @@ namespace portfolio
     {
         m_texture = ResourceManager::GetInstance().LoadTexture(filename);
     }
+
+    glm::ivec2 RenderComponent::GetTextureSize() const
+    {
+        if (m_texture) return m_texture->GetSize();
+        return {0, 0};
+    }
 }

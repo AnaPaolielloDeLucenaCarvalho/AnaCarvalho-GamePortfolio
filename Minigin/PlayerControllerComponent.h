@@ -51,52 +51,65 @@ namespace portfolio
             float newX = posBefore.x + movement.x;
             float newY = posBefore.y + movement.y;
 
+            float feetOffsetX = 88.0f / 2.0f;
+            float feetOffsetY = 110.0f;
+
+            auto checkCollision = [&](float tX, float tY) -> bool {
+                bool canWalk = true;
+                if (!m_WalkableZones.empty())
+                {
+                    canWalk = false;
+                    for (const auto& zone : m_WalkableZones)
+                    {
+                        if (tX >= zone.x && tX <= zone.x + zone.w &&
+                            tY >= zone.y && tY <= zone.y + zone.h) {
+                            canWalk = true;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    if (tX < 0.0f || tX > 1366.0f || tY < 0.0f || tY > 768.0f)
+                        canWalk = false;
+                }
+
+                if (canWalk)
+                {
+                    for (const auto& obs : m_ObstacleZones)
+                    {
+                        if (tX >= obs.x && tX <= obs.x + obs.w &&
+                            tY >= obs.y && tY <= obs.y + obs.h) {
+                            canWalk = false;
+                            break;
+                        }
+                    }
+                }
+                return canWalk;
+            };
+
+            bool canWalkX = checkCollision(newX + feetOffsetX, posBefore.y + feetOffsetY);
+            bool canWalkY = checkCollision(posBefore.x + feetOffsetX, newY + feetOffsetY);
+
+            float finalX = canWalkX ? newX : posBefore.x;
+            float finalY = canWalkY ? newY : posBefore.y;
+
+            if (!canWalkX && !canWalkY && m_AutoWalk)
+            {
+                m_AutoWalk = false;
+            }
+
             if (m_WalkableZones.empty())
             {
                 float minX = 0.0f, maxX = 1366.0f - 88.0f;
                 float minY = 0.0f, maxY = 768.0f - 120.0f;
-                if (newX < minX) newX = minX;
-                if (newX > maxX) newX = maxX;
-                if (newY < minY) newY = minY;
-                if (newY > maxY) newY = maxY;
-
-                GetOwner()->SetLocalPosition(newX, newY);
+                if (finalX < minX) finalX = minX;
+                if (finalX > maxX) finalX = maxX;
+                if (finalY < minY) finalY = minY;
+                if (finalY > maxY) finalY = maxY;
             }
-            else
-            {
-                float feetOffsetX = 88.0f / 2.0f;
-                float feetOffsetY = 110.0f;
 
-                bool canWalkX = false;
-                bool canWalkY = false;
-
-                float testX = newX + feetOffsetX;
-                float testY = posBefore.y + feetOffsetY;
-                for (const auto& zone : m_WalkableZones)
-                {
-                    if (testX >= zone.x && testX <= zone.x + zone.w &&
-                        testY >= zone.y && testY <= zone.y + zone.h) canWalkX = true;
-                }
-
-                testX = posBefore.x + feetOffsetX;
-                testY = newY + feetOffsetY;
-                for (const auto& zone : m_WalkableZones)
-                {
-                    if (testX >= zone.x && testX <= zone.x + zone.w &&
-                        testY >= zone.y && testY <= zone.y + zone.h) canWalkY = true;
-                }
-
-                float finalX = canWalkX ? newX : posBefore.x;
-                float finalY = canWalkY ? newY : posBefore.y;
-                
-                // If we can't move in either direction, cancel autowalk to avoid getting stuck
-                if (!canWalkX && !canWalkY)
-                {
-                     m_AutoWalk = false;
-                }
-
-                GetOwner()->SetLocalPosition(finalX, finalY);
-            }
+            GetOwner()->SetLocalPosition(finalX, finalY);
 
             auto posAfter = GetOwner()->GetTransform().GetPosition();
             if (std::abs(posBefore.x - posAfter.x) > 0.01f || std::abs(posBefore.y - posAfter.y) > 0.01f)
@@ -172,12 +185,18 @@ namespace portfolio
             m_WoodZones = woodZones;
         }
 
+        void AddObstacle(const SDL_FRect& obstacle)
+        {
+            m_ObstacleZones.push_back(obstacle);
+        }
+
     private:
         glm::vec2 m_TargetPos{0,0};
         bool m_AutoWalk = false;
         float m_Speed = 150.0f;
         std::vector<SDL_FRect> m_WalkableZones;
         std::vector<SDL_FRect> m_WoodZones;
+        std::vector<SDL_FRect> m_ObstacleZones;
         bool m_AlwaysWood = true;
 
         int m_CurrentSurface = 1; // 1 = Wood, 2 = Grass

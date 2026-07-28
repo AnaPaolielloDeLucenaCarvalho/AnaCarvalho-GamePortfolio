@@ -288,6 +288,7 @@ void LoadMainMenu(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent
 
     auto bg = std::make_unique<portfolio::GameObject>();
     bg->AddComponent<portfolio::RenderComponent>("MainMenuBackground.png");
+    bg->SetLayer(0);
     scene.Add(std::move(bg));
 
     auto player = std::make_unique<portfolio::GameObject>();
@@ -296,6 +297,33 @@ void LoadMainMenu(portfolio::GameObject*& outPlayer, portfolio::TriggerComponent
     player->SetLocalPosition(642.5f, 400.0f);
     outPlayer = player.get();
     scene.Add(std::move(player));
+
+    auto addPillar = [&](float x, float y, const std::string& tex, bool flip = false, bool hasCollision = true, int layer = 1) {
+        auto pillar = std::make_unique<portfolio::GameObject>();
+        auto rc = pillar->AddComponent<portfolio::RenderComponent>(tex);
+        if (flip) rc->SetFlip(true);
+        pillar->SetLocalPosition(x, y);
+        pillar->SetLayer(layer);
+        
+        if (hasCollision && outPlayer)
+        {
+            auto size = rc->GetTextureSize();
+            float boxHeight = 30.0f; 
+            outPlayer->GetComponent<portfolio::PlayerControllerComponent>()->AddObstacle({x, y + size.y - boxHeight, (float)size.x, boxHeight});
+        }
+        scene.Add(std::move(pillar));
+    };
+
+    addPillar(604.0f, -68.0f, "Wood.png");
+    addPillar(724.0f, -68.0f, "Wood.png");
+    addPillar(604.0f, 36.0f, "WoodAbout.png");
+    addPillar(724.0f, 228.0f, "Wood.png");
+    addPillar(604.0f, 228.0f, "Wood.png", true);
+    addPillar(604.0f, 376.0f, "Wood.png");
+    addPillar(724.0f, 376.0f, "Wood.png");
+    addPillar(724.0f, 492.0f, "Wood.png");
+    addPillar(604.0f, 492.0f, "Wood.png");
+    addPillar(604.0f, 596.0f, "WoodProjects.png");
 
     auto treeTop = std::make_unique<portfolio::GameObject>();
     treeTop->AddComponent<portfolio::RenderComponent>("MainMenuTop.png");
@@ -329,6 +357,7 @@ void LoadAboutScene(portfolio::GameObject*& outPlayer, portfolio::TriggerCompone
 
     auto bg = std::make_unique<portfolio::GameObject>();
     bg->AddComponent<portfolio::RenderComponent>("AboutBackground.png");
+    bg->SetLayer(0);
     scene.Add(std::move(bg));
 
     auto player = std::make_unique<portfolio::GameObject>();
@@ -336,6 +365,29 @@ void LoadAboutScene(portfolio::GameObject*& outPlayer, portfolio::TriggerCompone
     player->AddComponent<portfolio::PlayerControllerComponent>();
     outPlayer = player.get();
     scene.Add(std::move(player));
+
+    auto addPillar = [&](float x, float y, const std::string& tex, bool flip = false, bool hasCollision = true, int layer = 1) {
+        auto pillar = std::make_unique<portfolio::GameObject>();
+        auto rc = pillar->AddComponent<portfolio::RenderComponent>(tex);
+        if (flip) rc->SetFlip(true);
+        pillar->SetLocalPosition(x, y);
+        pillar->SetLayer(layer);
+        
+        if (hasCollision && outPlayer)
+        {
+            auto size = rc->GetTextureSize();
+            float boxHeight = 30.0f; 
+            outPlayer->GetComponent<portfolio::PlayerControllerComponent>()->AddObstacle({x, y + size.y - boxHeight, (float)size.x, boxHeight});
+        }
+        scene.Add(std::move(pillar));
+    };
+
+    addPillar(724.0f, 720.0f, "Wood.png");
+    addPillar(604.0f, 720.0f, "Wood.png");
+    addPillar(724.0f, 572.0f, "Wood2.png", true);
+    addPillar(604.0f, 572.0f, "Wood2.png");
+    addPillar(724.0f, 424.0f, "Wood2.png");
+    addPillar(604.0f, 424.0f, "Wood2.png", true);
 
     auto tr1 = std::make_unique<portfolio::GameObject>();
     tr1->SetLocalPosition(624.0f, 720.0f);
@@ -352,7 +404,14 @@ void LoadContactScene(portfolio::GameObject*& outPlayer, portfolio::TriggerCompo
 
     auto bg = std::make_unique<portfolio::GameObject>();
     bg->AddComponent<portfolio::RenderComponent>("ContactBackground.png");
+    bg->SetLayer(0);
     scene.Add(std::move(bg));
+
+    auto contactTop = std::make_unique<portfolio::GameObject>();
+    contactTop->AddComponent<portfolio::RenderComponent>("ContactTop.png");
+    contactTop->SetLocalPosition(0.0f, 330.0f);
+    contactTop->SetLayer(2); // Always on top of everything
+    scene.Add(std::move(contactTop));
 
     auto player = std::make_unique<portfolio::GameObject>();
     player->AddComponent<portfolio::SpriteComponent>("PlayerSprite.png", 3, 3, 0.1f);
@@ -564,6 +623,7 @@ void LoadProjectsScene(portfolio::GameObject*& outPlayer, portfolio::TriggerComp
 
     auto bg = std::make_unique<portfolio::GameObject>();
     bg->AddComponent<portfolio::RenderComponent>("ProjectsBackground.png");
+    bg->SetLayer(0);
     scene.Add(std::move(bg));
 
     auto player = std::make_unique<portfolio::GameObject>();
@@ -571,6 +631,37 @@ void LoadProjectsScene(portfolio::GameObject*& outPlayer, portfolio::TriggerComp
     player->AddComponent<portfolio::PlayerControllerComponent>();
     outPlayer = player.get();
     scene.Add(std::move(player));
+
+    auto addPillar = [&](float x, float y, const std::string& tex, bool flip = false, bool hasCollision = true, int layer = 1) 
+    {
+        auto pillar = std::make_unique<portfolio::GameObject>();
+        auto rc = pillar->AddComponent<portfolio::RenderComponent>(tex);
+        if (flip) rc->SetFlip(true);
+        pillar->SetLocalPosition(x, y);
+        pillar->SetLayer(layer);
+        
+        if (hasCollision && outPlayer)
+        {
+            auto size = rc->GetTextureSize();
+            float boxHeight = 30.0f; 
+            outPlayer->GetComponent<portfolio::PlayerControllerComponent>()->AddObstacle({x, y + size.y - boxHeight, (float)size.x, boxHeight});
+        }
+        scene.Add(std::move(pillar));
+    };
+
+    addPillar(724.0f, 68.0f, "Wood.png");
+    addPillar(604.0f, 68.0f, "Wood.png", true);
+    addPillar(724.0f, 216.0f, "Wood.png");
+    addPillar(604.0f, 216.0f, "Wood.png");
+    addPillar(891.0f, 51.0f, "Flower9.png");
+    addPillar(1054.0f, 232.0f, "Flower1.png");
+    addPillar(778.0f, 323.0f, "Flower7.png");
+    addPillar(1031.0f, 512.0f, "Flower2.png");
+    addPillar(595.0f, 581.0f, "Flower6.png");
+    addPillar(386.0f, 383.0f, "Flower3.png");
+    addPillar(140.0f, 525.0f, "Flower4.png");
+    addPillar(62.0f, 215.0f, "Flower5.png");
+    addPillar(265.0f, 27.0f, "Flower8.png");
 
     auto trMain = std::make_unique<portfolio::GameObject>();
     trMain->SetLocalPosition(624.0f, 0.0f);
