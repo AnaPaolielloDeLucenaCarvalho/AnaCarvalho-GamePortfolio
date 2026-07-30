@@ -183,24 +183,22 @@ public:
     {
         glm::vec2 mousePos = portfolio::InputManager::GetInstance().GetMousePosition();
         
-        // Email: x703 y354 w487 h45
-        if (mousePos.x >= 703 && mousePos.x <= 703 + 487 &&
-            mousePos.y >= 354 && mousePos.y <= 354 + 45)
+        if (mousePos.x >= 712 && mousePos.x <= 712 + 460 &&
+            mousePos.y >= 361 && mousePos.y <= 361 + 38)
         {
 #ifdef __EMSCRIPTEN__
             emscripten_run_script("window.open('mailto:anapaoliello@hotmail.com', '_self');");
 #endif
         }
-        else if (mousePos.x >= 703 && mousePos.x <= 703 + 487 &&
-                 mousePos.y >= 404 && mousePos.y <= 404 + 75)
+        else if (mousePos.x >= 712 && mousePos.x <= 712 + 460 &&
+                 mousePos.y >= 411 && mousePos.y <= 411 + 80)
         {
 #ifdef __EMSCRIPTEN__
             emscripten_run_script("window.open('https://www.linkedin.com/in/ana-pl-carvalho', '_blank');");
 #endif
         }
-        // GitHub: x703 y499 w487 h90
-        else if (mousePos.x >= 703 && mousePos.x <= 703 + 487 &&
-                 mousePos.y >= 499 && mousePos.y <= 499 + 90)
+        else if (mousePos.x >= 712 && mousePos.x <= 712 + 460 &&
+                 mousePos.y >= 503 && mousePos.y <= 503 + 86)
         {
 #ifdef __EMSCRIPTEN__
             emscripten_run_script("window.open('https://github.com/AnaPaolielloDeLucenaCarvalho', '_blank');");
@@ -248,9 +246,9 @@ void BindPlayerInputs(portfolio::GameObject* playerPtr, bool canInteract = false
         {
             if (portfolio::SceneManager::GetInstance().GetActiveScene() == 2)
             {
-                if (mousePos.x >= 703 && mousePos.x <= 703 + 487 && mousePos.y >= 354 && mousePos.y <= 354 + 45) return;
-                if (mousePos.x >= 703 && mousePos.x <= 703 + 487 && mousePos.y >= 404 && mousePos.y <= 404 + 75) return;
-                if (mousePos.x >= 703 && mousePos.x <= 703 + 487 && mousePos.y >= 499 && mousePos.y <= 499 + 90) return;
+                if (mousePos.x >= 712 && mousePos.x <= 712 + 460 && mousePos.y >= 361 && mousePos.y <= 361 + 38) return;
+                if (mousePos.x >= 712 && mousePos.x <= 712 + 460 && mousePos.y >= 411 && mousePos.y <= 411 + 80) return;
+                if (mousePos.x >= 712 && mousePos.x <= 712 + 460 && mousePos.y >= 503 && mousePos.y <= 503 + 86) return;
             }
 
             auto controller = playerPtr->GetComponent<portfolio::PlayerControllerComponent>();
@@ -880,7 +878,7 @@ void load()
                 pc->SetSpeed(150.0f);
             }
             BindPlayerInputs(p3, false);
-            portfolio::InputManager::GetInstance().BindMouseCommand(1, portfolio::KeyState::Pressed, std::make_unique<ContactClickCommand>());
+            portfolio::InputManager::GetInstance().BindMouseCommand(1, portfolio::KeyState::Down, std::make_unique<ContactClickCommand>());
         });
     });
 
