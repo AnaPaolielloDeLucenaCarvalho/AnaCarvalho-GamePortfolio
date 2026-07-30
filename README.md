@@ -7,10 +7,16 @@ It runs on a custom engine I've been developing for my Programming 4 final exam 
 ⭐ **[Play the Portfolio Here!](https://anapaoliellodelucenacarvalho.github.io/AnaCarvalho-GamePortfolio/)**
 
 <div>
-  <img width="237.5" height="132.5" alt="About" src="https://github.com/user-attachments/assets/b8ad7bf9-4223-443e-9991-02e26dab99c6" />
-  <img width="237.5" height="132.5" alt="Contact" src="https://github.com/user-attachments/assets/ca8763de-bfdc-46f5-9f37-3b6f0621c7c4" />
-  <img width="237.5" height="132.5" alt="Main menu" src="https://github.com/user-attachments/assets/429dc273-dd33-48eb-aa08-898ad4c81578" />
-  <img width="237.5" height="132.5" alt="Projects" src="https://github.com/user-attachments/assets/3afdf544-f616-44af-a4c5-99b99936d8a6" />
+  <table>
+    <tr>
+      <td><img width="400" alt="About" src="https://github.com/user-attachments/assets/b8ad7bf9-4223-443e-9991-02e26dab99c6" /></td>
+      <td><img width="400" alt="Contact" src="https://github.com/user-attachments/assets/ca8763de-bfdc-46f5-9f37-3b6f0621c7c4" /></td>
+    </tr>
+    <tr>
+      <td><img width="400" alt="Main menu" src="https://github.com/user-attachments/assets/429dc273-dd33-48eb-aa08-898ad4c81578" /></td>
+      <td><img width="400" alt="Projects" src="https://github.com/user-attachments/assets/3afdf544-f616-44af-a4c5-99b99936d8a6" /></td>
+    </tr>
+  </table>
 </div>
 
 <br>
